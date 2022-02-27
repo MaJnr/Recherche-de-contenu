@@ -392,13 +392,9 @@ public class Main extends Application {
         String absolutePathOfXMLFile = TEST_PATH_TO_TXT_PREFIX + formatter.format(d) + ".txt";
 
         File generatedFolder = new File("generated");
-        if (generatedFolder.exists()) {
-            testXmlFile = new File(absolutePathOfXMLFile);
-        } else {
-            if (generatedFolder.mkdir()) {
-                System.out.println("dossier 'generated' créé");
-            } else
-                System.out.println("le dossier 'generated' n'a pas pu être créé");
+        testXmlFile = new File(absolutePathOfXMLFile);
+        if (!generatedFolder.exists()) {
+            System.out.println("generate txt folder : " + generatedFolder.mkdir());
         }
 
 
@@ -440,12 +436,13 @@ public class Main extends Application {
         String[] splittedStrings = fileName.split("\\.");
 
         if (splittedStrings.length == 0) {
-            System.out.println("\u001B[41m" + "Erreur : le fichier n'a aucun nom" + "\u001B[0m");
+            System.out.println((char)27 + "[43m" + "Erreur : le fichier n'a aucun nom" + + (char)27 + "[0m");
             return;
         }
 
         if (splittedStrings.length == 1) {
-            System.out.println("\u001B[41m" + "Erreur : fichier inconnu : " + splittedStrings[0] + "\u001B[0m");
+            // message in yellow (warning)
+            System.out.println((char)27 + "[43m" + "Un fichier inconnu a été ignoré : " + splittedStrings[0] + (char)27 + "[0m");
             return;
         }
 
@@ -657,6 +654,7 @@ public class Main extends Application {
                 Image image = new Image(new FileInputStream(path));
                 imageView = new ImageView(image);
                 imageView.setFitHeight(600);
+                imageView.setFitWidth(1400);
                 imageView.setPreserveRatio(true);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
@@ -667,6 +665,7 @@ public class Main extends Application {
             mediaPlayer = new MediaPlayer(media);
             mediaView = new MediaView(mediaPlayer);
             mediaView.setFitHeight(600);
+            mediaView.setFitWidth(1400);
             mediaView.setPreserveRatio(true);
             mediaView.setOnMouseClicked(event -> {
                 if (!isVideoPlaying.get()) {

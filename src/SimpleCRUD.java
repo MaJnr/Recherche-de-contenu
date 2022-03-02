@@ -1,7 +1,6 @@
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringTokenizer;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class SimpleCRUD {
     // vars
@@ -13,11 +12,77 @@ public class SimpleCRUD {
 
     // file to save
     private File db;
-    private final String tmpSaveFileName = "generated/tmp_CRUD test.txt";
+    private final String tmpSaveFileName = "generated/tmp_CRUD.txt";
+
+    // backup file
+    private boolean didCreateBackup = false;
+    private File backupFile;
 
     // might want to enter the path of the txt file (the one stocked in prefs)
     public SimpleCRUD(String txtSaveFileName) {
-        db = new File(txtSaveFileName);
+        File saveFile = new File("generated/" + txtSaveFileName);
+
+        // if the file exists, we don't want to append the same records, but only the new ones
+        if (saveFile.exists()) {
+            SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy_HH.mm.ss");
+            Date d = new Date();
+            File otherFile = new File("generated/backup_" + formatter.format(d) + "_" + txtSaveFileName);
+            try {
+                System.out.println("backup file created: " + otherFile.createNewFile());
+                copyFile(saveFile, otherFile);
+                didCreateBackup = true;
+                backupFile = otherFile;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+//            backupFile = saveFile;
+//            SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy_HH.mm.ss");
+//            Date d = new Date();
+//            File fileDest = new File("generated/backup_" + formatter.format(d) + "_" + txtSaveFileName);
+//            /*try {
+//                System.out.println("dest file created : " + fileDest.createNewFile());
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }*/
+//            System.out.println(saveFile.getPath() + " write auth: " + saveFile.canWrite() + " read auth: " + saveFile.canRead());
+//            System.out.println("file dest already exists ? " + fileDest.exists() + " write auth: " + fileDest.canWrite() + " read auth: " + fileDest.canRead());
+//            didCreateBackup =  saveFile.renameTo(fileDest);
+//            System.out.println("creation of backup file: " + txtSaveFileName + " " + didCreateBackup + "   date: " + formatter.format(d) + "    path: " + fileDest.getAbsolutePath() + "    origin: " + saveFile.getAbsolutePath());
+
+        }
+        try {
+            db = saveFile;
+            BufferedWriter bw = new BufferedWriter(new FileWriter(db));
+            bw.write("");
+            bw.flush();
+            bw.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+           /* db = new File("generated/" + txtSaveFileName);
+        try {
+            System.out.println("db file created : " + db.createNewFile());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }*/
+    }
+
+    private void copyFile(File fileToCopy, File fileToPaste) throws IOException {
+        BufferedReader br = new BufferedReader(new FileReader(fileToCopy));
+        BufferedWriter bw = new BufferedWriter(new FileWriter(fileToPaste));
+
+        String record;
+
+        while ((record = br.readLine()) != null) {
+            bw.write(record);
+            bw.flush();
+            bw.newLine();
+        }
+        br.close();
+        bw.close();
     }
 
     public SimpleCRUD(String id, String type, String title, String tags, String path) {
@@ -32,15 +97,33 @@ public class SimpleCRUD {
         db = new File("generated/CRUD test.txt");
     }
 
-    public void addRecord(int id, String type, String title, String tags, String path, File testXmlFile) throws IOException {
-        // do something like "if id already exists then print error"
+    public void addRecord(int id, String type, String title, String tags, String path) throws IOException {
+        // prevent the user from entering a comma which would mess up the txt file
         if (tags.contains(",")) {
             System.out.println("\u001B[41m" + "Erreur : les mots clefs ne doivent pas contenir de virgule" + "\u001B[0m");
             return;
         }
 
-        BufferedWriter bw = new BufferedWriter(new FileWriter(testXmlFile, true));
-        bw.write(id + "," + type + "," + title + "," + tags + "," + path);
+        BufferedWriter bw = new BufferedWriter(new FileWriter(db, true));
+        String tagsToWrite = tags;
+
+        // if a backup file has been set, we copy the existing data to the new file
+        // ex: old file (before) -> image1, customTag, path1...
+        //                          image2, tag2, path2...
+        //     new file (after)  -> image1, customTag, path1...
+        //                          image2, tag2, path2...
+        //                          image3, tag3, path3...     <- a line was added, but the others remain the same
+        if (didCreateBackup) {
+            // loop inside backup file
+            String[] record = searchRecordByPathName(path, backupFile);
+            System.out.println(Arrays.toString(record));
+            if (record != null && record.length != 0) {
+                tagsToWrite = record[3];
+            }
+
+        }
+
+        bw.write(id + "," + type + "," + title + "," + tagsToWrite + "," + path);
         bw.flush();
         bw.newLine();
         bw.close();
@@ -114,8 +197,8 @@ public class SimpleCRUD {
         tmpDB.renameTo(db);
     }
 
-    public String[] searchRecordById(String id) throws IOException {
-        BufferedReader br = new BufferedReader(new FileReader(db));
+    public String[] searchRecordByPathName(String pathName, File fileToRead) throws IOException {
+        BufferedReader br = new BufferedReader(new FileReader(fileToRead));
         String record;
         String[] recordArray = new String[0];
 
@@ -129,8 +212,8 @@ public class SimpleCRUD {
             String stTags = st.nextToken();
             String stPath = st.nextToken();
 
-            if (stId.equals(id)) {
-                recordArray = new String[]{stId, stType, stTitle, stTags, stPath};
+            if (stPath.equals(pathName)) {
+                recordArray = new String[]{stId, stType, stTitle, stTags, pathName};
 
             }
         }
@@ -138,6 +221,13 @@ public class SimpleCRUD {
     }
 
     public void updateRecordById(String id, String newType, String newTitle, String newTags, String newPath) throws IOException {
+        // prevent the user from entering a comma which would mess up the txt file
+        if (newTags.contains(",")) {
+            System.out.println("\u001B[43m" + "ATTENTION : les mots clefs ne doivent pas contenir de virgule" + "\u001B[0m");
+            String tmpStr = newTags;
+            newTags = tmpStr.replace(",", " ");
+        }
+
         String record;
         File tmpDB = new File(tmpSaveFileName);
         BufferedReader br = new BufferedReader(new FileReader(db));
@@ -166,6 +256,13 @@ public class SimpleCRUD {
 
     // used to update just the tags
     public void updateTagsOfRecordById(String id, String newTags) throws IOException {
+        // prevent the user from entering a comma which would mess up the txt file
+        if (newTags.contains(",")) {
+            System.out.println("\u001B[43m" + "ATTENTION : les mots clefs ne doivent pas contenir de virgule" + "\u001B[0m");
+            String tmpStr = newTags;
+            newTags = tmpStr.replace(",", " ");
+        }
+
         String record;
         File tmpDB = new File(tmpSaveFileName);
         BufferedReader br = new BufferedReader(new FileReader(db));

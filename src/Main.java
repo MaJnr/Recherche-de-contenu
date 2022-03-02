@@ -97,6 +97,9 @@ public class Main extends Application {
     final String[] SUPPORTED_VIDEO_EXTENSIONS = {"mp4", "mpg", "mov", "wmv"};
     final String[] SUPPORTED_IMAGES_EXTENSIONS = {"jpg", "png", "jpeg", "gif"};
 
+    // the class who manages all io operations on the txt files
+    private SimpleCRUD crud;
+
     @Override
     public void start(Stage primaryStage) {
 
@@ -178,14 +181,15 @@ public class Main extends Application {
         fileChooser.setTitle("Choisissez un fichier xml");
 
         // option menu
-        MenuItem generateXmlFile = new MenuItem("Générer un nouveau fichier xml (une nouvelle base de données)");
+        MenuItem generateXmlFile = new MenuItem("Actualiser la base de données (un fichier de sauvegarde sera créé)");
         generateXmlFile.setOnAction(event -> {
             // we reset the id number
             _idIncrNumber = 0;
             generateXmlFile();
         });
 
-        MenuItem changeMainDirectory = new MenuItem("Changer de dossier principal (sélectionner le dossier parent du contenu)");
+        // when we change the source folder, we associate a txt file to it
+        MenuItem changeMainDirectory = new MenuItem("Changer de dossier principal (sélectionner le dossier source du contenu)");
         changeMainDirectory.setOnAction(event -> {
 
             //directoryChooser.setInitialDirectory(new File(prefs.get(PATH_TO_DATA_DIR_PREF_KEY, System.getProperty("user.home") + "\\pictures")));
@@ -202,6 +206,14 @@ public class Main extends Application {
                 // recreate the main box of all displayed results
                 allResultsBox.getChildren().clear();
             }
+
+            // - if there is no txt file associated to the src folder, we create one in generated
+            //   we give it the name of the src folder
+            // - if there is a txt file with the name of the src, we store the tags previously modified, then create a new txt file
+            //   we add to it the tags associated with their id, and delete the original file
+            _idIncrNumber = 0;
+            generateXmlFile();
+
         });
 
         MenuItem changeCurrentXmlFile = new MenuItem("Changer de fichier xml (sélectionner une autre base de données)");
@@ -212,7 +224,7 @@ public class Main extends Application {
             if (saveFile.exists()) {
                 fileChooser.setInitialDirectory(new File("generated"));
             } else {
-                if (saveFile.mkdir()){
+                if (saveFile.mkdir()) {
                     System.out.println("dossier 'generated' créé");
                 } else
                     System.out.println("le dossier 'generated' n'a pas pu être créé");
@@ -229,6 +241,13 @@ public class Main extends Application {
 
                 System.out.println("new xml file source : " + prefs.get(PATH_TO_XML_FILE, "aucun"));
             }
+        });
+
+        // refresh txt if an item was added
+        // we create a copy of the existing txt file then we append the new data
+        MenuItem helpItem = new MenuItem("Aide");
+        helpItem.setOnAction(event -> {
+            openHelpWindow();
         });
 
         optionsMenu = new Menu("Options");
@@ -258,6 +277,10 @@ public class Main extends Application {
         nodeList.add(scrollPane);
 
         return nodeList;
+    }
+
+    private void openHelpWindow() {
+        System.out.println("help window opened");
     }
 
     private void startSearching() {
@@ -293,8 +316,11 @@ public class Main extends Application {
         //todo: CRUD TEST
         // get results
         //System.out.println(prefs.get(PATH_TO_XML_FILE, "nope"));
-        SimpleCRUD crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"));
+        //SimpleCRUD crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"));
         try {
+            if (crud == null) {
+                return;
+            }
             List<String[]> allResultsList = crud.viewAllRecords();
 
             for (String[] resultRow : allResultsList) {
@@ -386,27 +412,43 @@ public class Main extends Application {
         File fileToSearch = new File(mainPath);
         System.out.println(mainPath);
 
-        // we generate a new file for the test with a time-generated name
+        /*// we generate a new file for the test with a time-generated name
         SimpleDateFormat formatter = new SimpleDateFormat("dd_MM_yyyy_HH_mm_ss");
         Date d = new Date();
-        String absolutePathOfXMLFile = TEST_PATH_TO_TXT_PREFIX + formatter.format(d) + ".txt";
+        String absolutePathOfXMLFile = TEST_PATH_TO_TXT_PREFIX + formatter.format(d) + ".txt";*/
+
+        // we generate a txt name based on the src folder
+        // ex: screenshots.txt
+        String absolutePathOfXMLFile = new File(mainPath).getName() + ".txt";
+
+        /*if (new File(absolutePathOfXMLFile).exists()) {
+            testXmlFile = new File("generated/tmp_" + new File(mainPath).getName() + ".txt");
+        } else */
+        testXmlFile = new File("generated/" + absolutePathOfXMLFile);
 
         File generatedFolder = new File("generated");
-        testXmlFile = new File(absolutePathOfXMLFile);
         if (!generatedFolder.exists()) {
             System.out.println("generate txt folder : " + generatedFolder.mkdir());
         }
 
+        prefs.put(PATH_TO_XML_FILE, absolutePathOfXMLFile);
+        prefs.putBoolean(HAS_PATH_TO_XML_FILE_BEEN_SET, true);
+        System.out.println(prefs.get(PATH_TO_XML_FILE, "NO!!!"));
+
+        // recreate the main box of all displayed results
+        allResultsBox.getChildren().clear();
+
+        System.out.println("new xml file source : " + prefs.get(PATH_TO_XML_FILE, "none"));
 
 
-
-    //    try {
+        //    try {
           /*  fileWriter = new FileWriter(testXmlFile, true);
             bw = new BufferedWriter(fileWriter);
             bw.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                     "<DATA>\n");*/
 
-            searchFiles(fileToSearch);
+        crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"));
+        searchFiles(fileToSearch);
 
 //            bw.write("</DATA>\n");
 //            bw.close();
@@ -433,16 +475,16 @@ public class Main extends Application {
     // create a writer to put the path of a file inside the xml file
     private void writeInXMLFile(String absolutePathName, String fileName) {
         // we split the file name to obtain first the name itself and second the file extension (.mp4, .png ,...)
-        String[] splittedStrings = fileName.split("\\.");
+        String[] splitStrings = fileName.split("\\.");
 
-        if (splittedStrings.length == 0) {
-            System.out.println((char)27 + "[43m" + "Erreur : le fichier n'a aucun nom" + + (char)27 + "[0m");
+        if (splitStrings.length == 0) {
+            System.out.println((char) 27 + "[43m" + "Erreur : le fichier n'a aucun nom" + +(char) 27 + "[0m");
             return;
         }
 
-        if (splittedStrings.length == 1) {
+        if (splitStrings.length == 1) {
             // message in yellow (warning)
-            System.out.println((char)27 + "[43m" + "Un fichier inconnu a été ignoré : " + splittedStrings[0] + (char)27 + "[0m");
+            System.out.println((char) 27 + "[43m" + "Un fichier inconnu a été ignoré : " + splitStrings[0] + (char) 27 + "[0m");
             return;
         }
 
@@ -450,13 +492,13 @@ public class Main extends Application {
         boolean wasFileAddedToList = false;
 
         for (String vidExt : SUPPORTED_VIDEO_EXTENSIONS) {
-            if (splittedStrings[1].equalsIgnoreCase(vidExt)) {
+            if (splitStrings[1].equalsIgnoreCase(vidExt)) {
                 // the tags must be manually added after
                 try {
                     //todo: HERE IS THE TEST FOR THE TXT FILE
                     // there must be a tag (not empty) so we give the type
-                    SimpleCRUD crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"));
-                    crud.addRecord(_idIncrNumber, "video", fileName, "video", absolutePathName, testXmlFile);
+
+                    crud.addRecord(_idIncrNumber, "video", fileName, "video", absolutePathName);
 
                   /*  bw.write("<CONTENT>\n" +
                             "<TYPE>" + "VIDEO" + "</TYPE>\n" +
@@ -473,14 +515,14 @@ public class Main extends Application {
             }
         }
         for (String imgExt : SUPPORTED_IMAGES_EXTENSIONS) {
-            if (!wasFileAddedToList && splittedStrings[splittedStrings.length -1].equalsIgnoreCase(imgExt)) {
+            if (!wasFileAddedToList && splitStrings[splitStrings.length - 1].equalsIgnoreCase(imgExt)) {
                 // the tags must be manually added after
                 //todo: for the images the title might be useless (ex: DSC00275.JPG)
                 try {
                     //todo: HERE IS THE TEST FOR THE TXT FILE
                     // there must be a tag (not empty) so we give the type
-                    SimpleCRUD crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"));
-                    crud.addRecord(_idIncrNumber, "image", fileName, "image", absolutePathName, testXmlFile);
+                    //SimpleCRUD crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"));
+                    crud.addRecord(_idIncrNumber, "image", fileName, "image", absolutePathName);
 
                     /*bw.write("<CONTENT>\n" +
                             "<TYPE>" + "IMAGE" + "</TYPE>\n" +
@@ -610,7 +652,7 @@ public class Main extends Application {
                             isVideoPlaying.set(false);
                         }
                         String tagText = tagsTextArea.getText().replace("\n", " ");
-                        SimpleCRUD crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"));
+                        //SimpleCRUD crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"));
                         try {
                             crud.updateTagsOfRecordById(id, tagText);
                         } catch (IOException e) {
@@ -618,7 +660,7 @@ public class Main extends Application {
                         }
                         // we modify the view
                         matchingResultsList.get(i)[3] = tagText;
-                        openEditor(matchingResultsList.get(i-1));
+                        openEditor(matchingResultsList.get(i - 1));
                     }
                 }
             }
@@ -627,13 +669,13 @@ public class Main extends Application {
         editNextButton.setOnAction(event -> {
             for (int i = 0; i < matchingResultsList.size(); i++) {
                 if (matchingResultsList.get(i) == resultRow) {
-                    if (i < matchingResultsList.size()-1) {
+                    if (i < matchingResultsList.size() - 1) {
                         if (isVideoPlaying.get()) {
                             mediaPlayer.dispose();
                             isVideoPlaying.set(false);
                         }
                         String tagText = tagsTextArea.getText().replace("\n", " ");
-                        SimpleCRUD crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"));
+                        //SimpleCRUD crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"));
                         try {
                             crud.updateTagsOfRecordById(id, tagText);
                         } catch (IOException e) {
@@ -641,12 +683,11 @@ public class Main extends Application {
                         }
                         // we modify the view
                         matchingResultsList.get(i)[3] = tagText;
-                        openEditor(matchingResultsList.get(i+1));
+                        openEditor(matchingResultsList.get(i + 1));
                     }
                 }
             }
         });
-
 
 
         if (type != null && type.equals("image")) {
@@ -725,7 +766,7 @@ public class Main extends Application {
                 isVideoPlaying.set(false);
             }
             String tagText = tagsTextArea.getText().replace("\n", " ");
-            SimpleCRUD crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"));
+            //SimpleCRUD crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"));
             try {
                 crud.updateTagsOfRecordById(id, tagText);
 

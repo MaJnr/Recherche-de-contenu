@@ -77,6 +77,10 @@ public class Main extends Application {
     private Text contentTitle;
     private Button openWithSystemButton;
 
+    // help window
+    private List<Node> helpNodeList;
+    private VBox helpVbox;
+
     // the preferences of the user are stored in the Vars file
     Preferences prefs;
     final String PATH_TO_DATA_DIR_PREF_KEY = "path_to_data_dir";
@@ -196,24 +200,30 @@ public class Main extends Application {
 
             // searches if the users has specified the folder to the data dir, and asks him if not
             // open a browser to choose a folder from
-            File selectedFile = directoryChooser.showDialog(primaryStage);
+            Alert selectedFileAlert = new Alert(Alert.AlertType.INFORMATION, "Cliquez sur OK pour sélectionner un dossier source");
+            selectedFileAlert.setHeaderText("Sélectionnez un dossier source");
+            Optional<ButtonType> result = selectedFileAlert.showAndWait();
 
-            if (selectedFile != null && !selectedFile.getPath().equalsIgnoreCase("")) {
-                prefs.put(PATH_TO_DATA_DIR_PREF_KEY, selectedFile.getAbsolutePath());
-                prefs.putBoolean(HAS_PATH_TO_DATA_DIR_BEEN_SET_PREF_KEY, true);
-                System.out.println("new dir: " + prefs.get(PATH_TO_DATA_DIR_PREF_KEY, System.getProperty("user.home") + "\\pictures"));
+            // if the user clicks on OK, he may select a src directory for the content
+            if (result.isPresent() && result.get() == ButtonType.OK) {
+                File selectedFile = directoryChooser.showDialog(primaryStage);
 
-                // recreate the main box of all displayed results
-                allResultsBox.getChildren().clear();
+                if (selectedFile != null && !selectedFile.getPath().equalsIgnoreCase("")) {
+                    prefs.put(PATH_TO_DATA_DIR_PREF_KEY, selectedFile.getAbsolutePath());
+                    prefs.putBoolean(HAS_PATH_TO_DATA_DIR_BEEN_SET_PREF_KEY, true);
+                    System.out.println("new dir: " + prefs.get(PATH_TO_DATA_DIR_PREF_KEY, System.getProperty("user.home") + "\\pictures"));
+
+                    // recreate the main box of all displayed results
+                    allResultsBox.getChildren().clear();
+                }
+
+                // - if there is no txt file associated to the src folder, we create one in generated
+                //   we give it the name of the src folder
+                // - if there is a txt file with the name of the src, we store the tags previously modified, then create a new txt file
+                //   we add to it the tags associated with their id, and delete the original file
+                _idIncrNumber = 0;
+                generateXmlFile();
             }
-
-            // - if there is no txt file associated to the src folder, we create one in generated
-            //   we give it the name of the src folder
-            // - if there is a txt file with the name of the src, we store the tags previously modified, then create a new txt file
-            //   we add to it the tags associated with their id, and delete the original file
-            _idIncrNumber = 0;
-            generateXmlFile();
-
         });
 
         MenuItem changeCurrentXmlFile = new MenuItem("Changer de fichier xml (sélectionner une autre base de données)");
@@ -251,7 +261,7 @@ public class Main extends Application {
         });
 
         optionsMenu = new Menu("Options");
-        optionsMenu.getItems().addAll(changeMainDirectory, generateXmlFile, changeCurrentXmlFile);
+        optionsMenu.getItems().addAll(changeMainDirectory, generateXmlFile, changeCurrentXmlFile, helpItem);
 
         // menu bar
         MenuBar menuBar = new MenuBar();
@@ -281,6 +291,32 @@ public class Main extends Application {
 
     private void openHelpWindow() {
         System.out.println("help window opened");
+
+        if (helpNodeList != null) {
+            helpNodeList.clear();
+        } else {
+            helpNodeList = new ArrayList<>();
+        }
+
+        Text helpText = new Text();
+        helpText.setText("Help text here");
+
+        helpVbox = new VBox();
+        helpVbox.getChildren().add(helpText);
+        helpNodeList.add(helpVbox);
+
+        Group helpGroup = new Group();
+        helpGroup.getChildren().addAll(helpNodeList);
+
+        Scene helpScene = new Scene(helpGroup, 800, 800);
+
+        Stage helpStage = new Stage();
+        helpStage.setScene(helpScene);
+        helpStage.setResizable(false);
+        helpStage.setTitle("Aide et informations");
+        helpStage.initOwner(primaryStage);
+        helpStage.initModality(Modality.WINDOW_MODAL);
+        helpStage.show();
     }
 
     private void startSearching() {
@@ -306,8 +342,14 @@ public class Main extends Application {
             }
         }
         if (!prefs.getBoolean(HAS_PATH_TO_XML_FILE_BEEN_SET, false)) {
-            Alert alert = new Alert(Alert.AlertType.WARNING, "Aucun fichier xml source n'a été spécifié : trouvez une source dans les options");
-            alert.show();
+            Alert alert = new Alert(Alert.AlertType.INFORMATION, "Cliquez sur OK pour générer une nouvelle base de données, ou séléctionnez en une dans les options");
+            alert.setHeaderText("Aucune base de données spécifiée");
+            Optional<ButtonType> result = alert.showAndWait();
+            // if the user clicks on OK, a new txt file will be generated
+            if (result.isPresent() && result.get() == ButtonType.OK) {
+                _idIncrNumber = 0;
+                generateXmlFile();
+            }
         }
 
         // recreate the main box of all displayed results

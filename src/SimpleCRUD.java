@@ -137,8 +137,10 @@ public class SimpleCRUD {
         bw.close();
     }
 
-    public List<String[]> viewAllRecords() throws IOException {
+    public List<String[]> viewAllRecords(int fileTypeFlag) throws IOException {
         List<String[]> recordList = new ArrayList<>();
+        System.out.println("flag : " + fileTypeFlag);
+
         if (!db.exists()) {
             return recordList;
         }
@@ -173,7 +175,30 @@ public class SimpleCRUD {
             }
 
             recordArray = new String[]{stId, stType, stTitle, stTags, stPath};
-            recordList.add(recordArray);
+
+            // we filter the results according to their type
+            if (fileTypeFlag == 0) {
+                recordList.add(recordArray);
+            } else if (fileTypeFlag == 1 && stType.equalsIgnoreCase("video")) {
+                recordList.add(recordArray);
+            } else if (fileTypeFlag == 2 && stType.equalsIgnoreCase("image")) {
+                recordList.add(recordArray);
+            } else if (fileTypeFlag == -1) {
+                System.out.println("Erreur: type de fichier non supporté");
+            }
+           /* switch (fileTypeFlag) {
+                case -1: System.out.println("Erreur lors du visionnage des fichiers: flag inconnu (-1)");
+                case 0: recordList.add(recordArray);
+                case 1:
+                    if (stType.equalsIgnoreCase("video")) {
+                    recordList.add(recordArray);
+                }
+                case 2:
+                    if (stType.equalsIgnoreCase("image")) {
+                    recordList.add(recordArray);
+                }
+                //default: System.out.println("Erreur lors du filtrage des fichiers: flag > 2");
+            }*/
         }
         br.close();
         return recordList;

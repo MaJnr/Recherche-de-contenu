@@ -205,7 +205,7 @@ public class Main extends Application {
         // scrollbar for the results list
         scrollPane = new ScrollPane(allResultsBox);
         scrollPane.setPrefWidth(window_width * 0.9 - 10);
-        scrollPane.setPrefHeight(window_height * 0.8 - 120);
+        scrollPane.setPrefHeight(window_height * 0.8 - 95);
         //scrollPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
         scrollPane.setLayoutX(5);
         scrollPane.setLayoutY(window_height * 0.20);
@@ -462,7 +462,18 @@ public class Main extends Application {
                 System.out.println("null");
                 crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"), false);
             }
-            List<String[]> allResultsList = crud.viewAllRecords();
+
+            // we add a flag to filter the results
+            int fileTypeFlag = -1;
+            if (filterAll.isSelected()) {
+                fileTypeFlag = 0;
+            } else if (filterVideos.isSelected()) {
+                fileTypeFlag = 1;
+            } else if (filterImages.isSelected()) {
+                fileTypeFlag = 2;
+            }
+
+            List<String[]> allResultsList = crud.viewAllRecords(fileTypeFlag);
 
             for (String[] resultRow : allResultsList) {
                 // items in resultRow :

@@ -1,4 +1,7 @@
 import javafx.application.Application;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -14,8 +17,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
@@ -42,6 +44,10 @@ public class Main extends Application {
     private Stage editStage;
     private Scene editScene;
 
+    // Width and height of the whole application
+    private double window_height = 900;
+    private double window_width = 1600;
+
     // path to the file where all data is stored
     private static final String TEST_PATH_TO_TXT_PREFIX = "generated/CRUD_";
     File testXmlFile;
@@ -55,7 +61,7 @@ public class Main extends Application {
     // other results list
     private ArrayList<String[]> matchingResultsList;
 
-    // layouts and nodes stuff
+    // main window
     Group group;
     private Group editGroup;
     List<Node> nodeList;
@@ -63,6 +69,15 @@ public class Main extends Application {
     DirectoryChooser directoryChooser;
     FileChooser fileChooser;
     Menu optionsMenu;
+    private ScrollPane scrollPane;
+    private MenuBar menuBar;
+    private HBox searchBox;
+    private Text t;
+    private VBox researchesVBox;
+    private List<Button> editButtonList;
+    private RadioButton filterAll;
+    private RadioButton filterVideos;
+    private RadioButton filterImages;
 
     // edit window
     private List<Node> editNodeList;
@@ -111,19 +126,71 @@ public class Main extends Application {
 
         group = new Group();
         group.getChildren().addAll(populateGroup());
+        //group.setAutoSizeChildren(true);
 
         listOfResults = new ArrayList<>();
         matchingResultsList = new ArrayList<>();
 
         prefs = Preferences.userRoot().node(this.getClass().getName());
 
-        Scene scene = new Scene(group, 1600, 900);
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        window_width = screenSize.width * 0.75;
+        window_height = screenSize.height * 0.75;
+
+        Scene scene = new Scene(group, window_width, window_height);
+
+        // if the window is resized, we also resize all nodes affected by this resize
+        scene.widthProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+                System.out.println("width changed: " + newValue.intValue());
+
+                scrollPane.setPrefWidth(newValue.doubleValue() - 10);
+                allResultsBox.setPrefWidth(scrollPane.getPrefWidth() - 17);
+                menuBar.setPrefWidth(newValue.doubleValue());
+                //searchBox.setPrefWidth(newValue.doubleValue() - 10);
+                searchBox.setPrefWidth(newValue.doubleValue());
+                //searchBox.setMaxWidth(newValue.doubleValue() - 10);
+                //searchBox.setMinWidth(newValue.doubleValue() - 10);
+                researchTextField.setPrefWidth(newValue.doubleValue() - 100);
+                //researchTextField.setLayoutX(newValue.doubleValue() - 100);
+                //t.setLayoutX(newValue.doubleValue() * 0.3);
+                researchesVBox.setPrefWidth(newValue.doubleValue());
+                //todo: pour l'edit button, seul le dernier est modifié
+                // il faut faire une liste de tous les buttons créés et les resizes ensembles (loop)
+                // aussi penser a créer/reset la liste de buttons a chaque recherche
+                //resultBox.setPrefWidth(scrollPane.getPrefWidth() - 15); // 1583
+                if (editButtonList != null) {
+                    for (Button b : editButtonList) {
+                        b.setPrefWidth(scrollPane.getPrefWidth() - 15);
+
+                    }
+                }
+                //resultBox.setPrefHeight(window_height * 0.1); // 100
+            }
+        });
+        scene.heightProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+                System.out.println("height changed: " + newValue.intValue());
+
+                scrollPane.setPrefHeight(newValue.doubleValue() - 185);
+                //resultBox.setPrefHeight(newValue.doubleValue() * 0.1);
+                if (editButtonList != null) {
+                    for (Button b : editButtonList) {
+                        b.setPrefHeight(scrollPane.getPrefHeight() * 0.1);
+                    }
+                }
+            }
+        });
 
         primaryStage.setTitle("Recherche de contenu");
+        primaryStage.setMinWidth(window_width * 0.4);
+        primaryStage.setMinHeight(window_height * 0.5);
         primaryStage.setScene(scene);
         scene.getRoot().requestFocus();
         this.primaryStage = primaryStage;
-        primaryStage.setResizable(false);
+        //primaryStage.setResizable(false);
 
         primaryStage.show();
     }
@@ -133,37 +200,42 @@ public class Main extends Application {
 
         // container for all results
         allResultsBox = new VBox();
+        allResultsBox.setPrefWidth(window_width * 0.9 - 27);
 
         // scrollbar for the results list
-        ScrollPane scrollPane = new ScrollPane(allResultsBox);
-        scrollPane.setPrefWidth(1600);
-        scrollPane.setPrefHeight(700);
+        scrollPane = new ScrollPane(allResultsBox);
+        scrollPane.setPrefWidth(window_width * 0.9 - 10);
+        scrollPane.setPrefHeight(window_height * 0.8 - 120);
+        //scrollPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
         scrollPane.setLayoutX(5);
-        scrollPane.setLayoutY(200);
+        scrollPane.setLayoutY(window_height * 0.20);
 
         // main vertical container
-        VBox researchesVBox = new VBox();
+        researchesVBox = new VBox();
         researchesVBox.setAlignment(Pos.TOP_CENTER);
-        researchesVBox.setPrefWidth(1600);
-        researchesVBox.setPrefHeight(200);
-        researchesVBox.setLayoutY(50);
+        researchesVBox.setPrefWidth(window_width * 0.9 - 10);
+        researchesVBox.setPrefHeight(window_height * 0.2); // 200
+        //researchesVBox.setFillWidth(true);
+        researchesVBox.setLayoutY(50); //50
 
         // horizontal search container
-        HBox searchBox = new HBox();
+        searchBox = new HBox();
         searchBox.setAlignment(Pos.CENTER);
-        searchBox.setPrefWidth(1600);
-        searchBox.setPrefHeight(100);
-        searchBox.setMinWidth(1500);
+        searchBox.setPrefWidth(window_width * 0.9 - 10);
+        searchBox.setPrefHeight(window_height * 0.1); // 100
+        //searchBox.setMinWidth(window_width * 0.9); // 1500
 
         // title text
-        Text t = new Text("Recherche de photos ou vidéos");
+        t = new Text("Recherche de photos ou vidéos");
         t.setTextAlignment(TextAlignment.CENTER);
         t.setStyle("-fx-font-size: 32");
+        t.setLayoutX(window_width * 0.3);
 
         // text input
         researchTextField = new TextField();
         researchTextField.setPromptText("Rechercher");
-        researchTextField.setPrefWidth(500);
+        researchTextField.setPrefWidth(window_width * 0.5);
+        researchTextField.setMaxWidth(window_width * 0.5);
         researchTextField.setOnKeyPressed(event -> {
             if (event.getCode().equals(KeyCode.ENTER)) {
                 startSearching();
@@ -182,7 +254,7 @@ public class Main extends Application {
 
         // file chooser for the xml file
         fileChooser = new FileChooser();
-        fileChooser.setTitle("Choisissez un fichier xml");
+        fileChooser.setTitle("Choisissez un fichier .txt");
 
         // option menu
         MenuItem generateXmlFile = new MenuItem("Actualiser la base de données (un fichier de sauvegarde sera créé)");
@@ -200,22 +272,15 @@ public class Main extends Application {
 
             // searches if the users has specified the folder to the data dir, and asks him if not
             // open a browser to choose a folder from
-            Alert selectedFileAlert = new Alert(Alert.AlertType.INFORMATION, "Cliquez sur OK pour sélectionner un dossier source");
-            selectedFileAlert.setHeaderText("Sélectionnez un dossier source");
-            Optional<ButtonType> result = selectedFileAlert.showAndWait();
+            File selectedFile = directoryChooser.showDialog(primaryStage);
 
-            // if the user clicks on OK, he may select a src directory for the content
-            if (result.isPresent() && result.get() == ButtonType.OK) {
-                File selectedFile = directoryChooser.showDialog(primaryStage);
+            if (selectedFile != null && !selectedFile.getPath().equalsIgnoreCase("")) {
+                prefs.put(PATH_TO_DATA_DIR_PREF_KEY, selectedFile.getAbsolutePath());
+                prefs.putBoolean(HAS_PATH_TO_DATA_DIR_BEEN_SET_PREF_KEY, true);
+                System.out.println("new dir: " + prefs.get(PATH_TO_DATA_DIR_PREF_KEY, System.getProperty("user.home") + "\\pictures"));
 
-                if (selectedFile != null && !selectedFile.getPath().equalsIgnoreCase("")) {
-                    prefs.put(PATH_TO_DATA_DIR_PREF_KEY, selectedFile.getAbsolutePath());
-                    prefs.putBoolean(HAS_PATH_TO_DATA_DIR_BEEN_SET_PREF_KEY, true);
-                    System.out.println("new dir: " + prefs.get(PATH_TO_DATA_DIR_PREF_KEY, System.getProperty("user.home") + "\\pictures"));
-
-                    // recreate the main box of all displayed results
-                    allResultsBox.getChildren().clear();
-                }
+                // recreate the main box of all displayed results
+                allResultsBox.getChildren().clear();
 
                 // - if there is no txt file associated to the src folder, we create one in generated
                 //   we give it the name of the src folder
@@ -264,8 +329,9 @@ public class Main extends Application {
         optionsMenu.getItems().addAll(changeMainDirectory, generateXmlFile, changeCurrentXmlFile, helpItem);
 
         // menu bar
-        MenuBar menuBar = new MenuBar();
-        menuBar.setPrefWidth(1620);
+        menuBar = new MenuBar();
+        menuBar.setPrefWidth(window_width);
+
         menuBar.getMenus().add(optionsMenu);
 
         // search button
@@ -274,12 +340,29 @@ public class Main extends Application {
             startSearching();
         });
 
+        // radio buttons to filter the searched content by video, images or all
+        ToggleGroup radioToggleGroup = new ToggleGroup();
+        filterAll = new RadioButton("Tous");
+        filterVideos = new RadioButton("Vidéos");
+        filterImages = new RadioButton("Images");
+        filterAll.setToggleGroup(radioToggleGroup);
+        filterAll.setSelected(true);
+        filterAll.setPadding(new Insets(0, 20, 70, 0));
+        filterVideos.setToggleGroup(radioToggleGroup);
+        filterVideos.setPadding(new Insets(0, 20, 70, 0));
+        filterImages.setToggleGroup(radioToggleGroup);
+        filterImages.setPadding(new Insets(0, 0, 70, 0));
+
+        HBox radioButtonBox = new HBox();
+        radioButtonBox.setAlignment(Pos.TOP_CENTER);
+        radioButtonBox.getChildren().addAll(filterAll, filterVideos, filterImages);
+
         // populate the container with all others elements
         // research bar with its search button
         searchBox.getChildren().addAll(researchTextField, okBtn);
 
-        // container of everything
-        researchesVBox.getChildren().addAll(t, searchBox);
+        // container for the title, search bar & his button and the radio buttons
+        researchesVBox.getChildren().addAll(t, searchBox, radioButtonBox);
 
         // add the container(s) to the node list
         nodeList.add(menuBar);
@@ -331,10 +414,21 @@ public class Main extends Application {
 
         // searches if the users has specified the folder to the data dir, and asks him if not
         if (!prefs.getBoolean(HAS_PATH_TO_DATA_DIR_BEEN_SET_PREF_KEY, false)) {
+            System.out.println("not been set");
+
+            Alert selectedFileAlert = new Alert(Alert.AlertType.INFORMATION, "Cliquez sur OK pour sélectionner un dossier source");
+            selectedFileAlert.setHeaderText("Sélectionnez un dossier source");
+            Optional<ButtonType> result = selectedFileAlert.showAndWait();
+
+            // if the user clicks on OK, he may select a src directory for the content
+            if (!result.isPresent() || result.get() != ButtonType.OK) {
+                return;
+            }
             // open a browser to choose a folder from
             File selectedFile = directoryChooser.showDialog(primaryStage);
 
             if (selectedFile != null && !selectedFile.getPath().equalsIgnoreCase("")) {
+                System.out.println("no file selected");
                 prefs.put(PATH_TO_DATA_DIR_PREF_KEY, selectedFile.getAbsolutePath());
                 prefs.putBoolean(HAS_PATH_TO_DATA_DIR_BEEN_SET_PREF_KEY, true);
             } else {
@@ -342,6 +436,7 @@ public class Main extends Application {
             }
         }
         if (!prefs.getBoolean(HAS_PATH_TO_XML_FILE_BEEN_SET, false)) {
+            System.out.println("c dla merde");
             Alert alert = new Alert(Alert.AlertType.INFORMATION, "Cliquez sur OK pour générer une nouvelle base de données, ou séléctionnez en une dans les options");
             alert.setHeaderText("Aucune base de données spécifiée");
             Optional<ButtonType> result = alert.showAndWait();
@@ -355,13 +450,17 @@ public class Main extends Application {
         // recreate the main box of all displayed results
         allResultsBox.getChildren().clear();
 
-        //todo: CRUD TEST
-        // get results
-        //System.out.println(prefs.get(PATH_TO_XML_FILE, "nope"));
-        //SimpleCRUD crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"));
+        // the results button list
+        if (editButtonList == null) {
+            editButtonList = new ArrayList<>();
+        } else {
+            editButtonList.clear();
+        }
+
         try {
             if (crud == null) {
-                return;
+                System.out.println("null");
+                crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"), false);
             }
             List<String[]> allResultsList = crud.viewAllRecords();
 
@@ -381,9 +480,9 @@ public class Main extends Application {
                     System.out.println("+---------------------------------------------------+" + "\n");*/
 
                     resultBox = new HBox();
-                    resultBox.setAlignment(Pos.CENTER);
-                    resultBox.setPrefWidth(1583);
-                    resultBox.setPrefHeight(100);
+                    //resultBox.setAlignment(Pos.CENTER);
+                    resultBox.setPrefWidth(window_width - 25); // 1583
+                    resultBox.setPrefHeight(window_height * 0.1); // 100
                     resultBox.setId("box" + resultRow[0]);
 
                     createResultButton(resultRow);
@@ -392,7 +491,7 @@ public class Main extends Application {
                     matchingResultsList.add(resultRow);
 
                     // then we add this container to the main list of all results
-                    allResultsBox.getChildren().add(resultBox);
+                    //allResultsBox.getChildren().add(resultBox);
                 }
 
             }
@@ -454,11 +553,6 @@ public class Main extends Application {
         File fileToSearch = new File(mainPath);
         System.out.println(mainPath);
 
-        /*// we generate a new file for the test with a time-generated name
-        SimpleDateFormat formatter = new SimpleDateFormat("dd_MM_yyyy_HH_mm_ss");
-        Date d = new Date();
-        String absolutePathOfXMLFile = TEST_PATH_TO_TXT_PREFIX + formatter.format(d) + ".txt";*/
-
         // we generate a txt name based on the src folder
         // ex: screenshots.txt
         String absolutePathOfXMLFile = new File(mainPath).getName() + ".txt";
@@ -489,7 +583,7 @@ public class Main extends Application {
             bw.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                     "<DATA>\n");*/
 
-        crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"));
+        crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"), true);
         searchFiles(fileToSearch);
 
 //            bw.write("</DATA>\n");
@@ -603,18 +697,21 @@ public class Main extends Application {
 
         // the edit button
         Button editButton = new Button(title + "\n" + tags);
-        editButton.setPrefHeight(100);
-        editButton.setPrefWidth(1600);
+        editButton.setPrefHeight(scrollPane.getPrefHeight() * 0.1);
+        editButton.setPrefWidth(scrollPane.getPrefWidth());
         editButton.setOnAction(event -> {
             openEditor(resultRow);
         });
 
-        HBox containerForResult = new HBox();
-        containerForResult.setPrefHeight(100);
-        containerForResult.setPrefWidth(1600);
+        editButtonList.add(editButton);
 
-        containerForResult.getChildren().add(editButton);
-        resultBox.getChildren().add(containerForResult);
+        //HBox containerForResult = new HBox();
+       // containerForResult.setPrefHeight(window_height * 0.1);
+        //containerForResult.setPrefWidth(window_width);
+
+        //containerForResult.getChildren().add(editButton);
+        //resultBox.getChildren().add(editButton);
+        allResultsBox.getChildren().add(editButton);
     }
 
     private void openEditor(String[] resultRow) {

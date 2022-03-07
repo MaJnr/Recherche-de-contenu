@@ -19,8 +19,12 @@ public class SimpleCRUD {
     private File backupFile;
 
     // might want to enter the path of the txt file (the one stocked in prefs)
-    public SimpleCRUD(String txtSaveFileName) {
+    public SimpleCRUD(String txtSaveFileName, boolean createDatabase) {
         File saveFile = new File("generated/" + txtSaveFileName);
+        if (!createDatabase) {
+            db = saveFile;
+            return;
+        }
 
         // if the file exists, we don't want to append the same records, but only the new ones
         if (saveFile.exists()) {
@@ -68,6 +72,10 @@ public class SimpleCRUD {
         } catch (IOException e) {
             e.printStackTrace();
         }*/
+    }
+
+    public void createNewDb(String txtSaveFileName) {
+
     }
 
     private void copyFile(File fileToCopy, File fileToPaste) throws IOException {

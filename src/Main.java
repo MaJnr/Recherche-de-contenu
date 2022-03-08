@@ -78,6 +78,8 @@ public class Main extends Application {
     private RadioButton filterAll;
     private RadioButton filterVideos;
     private RadioButton filterImages;
+    private HBox scrollAndEditorBox;
+    private VBox embedEditorBox;
 
     // edit window
     private List<Node> editNodeList;
@@ -91,6 +93,7 @@ public class Main extends Application {
     private MediaView mediaView;
     private Text contentTitle;
     private Button openWithSystemButton;
+    private boolean isEmbedEditorOpened;
 
     // help window
     private List<Node> helpNodeList;
@@ -143,10 +146,34 @@ public class Main extends Application {
         scene.widthProperty().addListener(new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-                System.out.println("width changed: " + newValue.intValue());
+                //scrollPane.setPrefWidth(newValue.doubleValue() - 10);
+                scrollAndEditorBox.setPrefWidth(newValue.doubleValue() - 10);
 
-                scrollPane.setPrefWidth(newValue.doubleValue() - 10);
-                allResultsBox.setPrefWidth(scrollPane.getPrefWidth() - 17);
+                // if the embed editor is opened, we reduce the with of the scroll pane
+                if (isEmbedEditorOpened) {
+                    embedEditorBox.setPrefWidth(newValue.doubleValue() * 0.7);
+                    scrollPane.setPrefWidth(scrollAndEditorBox.getPrefWidth() * 0.3);
+                    System.out.println(scrollPane.getPrefWidth());
+                    allResultsBox.setPrefWidth(scrollPane.getPrefWidth() - 22);
+                    if (editButtonList != null) {
+                        for (Button b : editButtonList) {
+                            b.setPrefWidth(allResultsBox.getPrefWidth());
+                            //b.setPrefWidth(scrollAndEditorBox.getPrefWidth() - 15);
+                        }
+                    }
+                } else {
+                    scrollPane.setPrefWidth(scrollAndEditorBox.getPrefWidth());
+                    allResultsBox.setPrefWidth(scrollPane.getPrefWidth() - 22);
+                    if (editButtonList != null) {
+                        for (Button b : editButtonList) {
+                            b.setPrefWidth(allResultsBox.getPrefWidth());
+                            //b.setPrefWidth(scrollAndEditorBox.getPrefWidth() - 15);
+                        }
+                    }
+                }
+
+
+
                 menuBar.setPrefWidth(newValue.doubleValue());
                 //searchBox.setPrefWidth(newValue.doubleValue() - 10);
                 searchBox.setPrefWidth(newValue.doubleValue());
@@ -156,29 +183,22 @@ public class Main extends Application {
                 //researchTextField.setLayoutX(newValue.doubleValue() - 100);
                 //t.setLayoutX(newValue.doubleValue() * 0.3);
                 researchesVBox.setPrefWidth(newValue.doubleValue());
-                //todo: pour l'edit button, seul le dernier est modifié
-                // il faut faire une liste de tous les buttons créés et les resizes ensembles (loop)
-                // aussi penser a créer/reset la liste de buttons a chaque recherche
                 //resultBox.setPrefWidth(scrollPane.getPrefWidth() - 15); // 1583
-                if (editButtonList != null) {
-                    for (Button b : editButtonList) {
-                        b.setPrefWidth(scrollPane.getPrefWidth() - 15);
 
-                    }
-                }
                 //resultBox.setPrefHeight(window_height * 0.1); // 100
             }
         });
         scene.heightProperty().addListener(new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-                System.out.println("height changed: " + newValue.intValue());
+                //scrollPane.setPrefHeight(newValue.doubleValue() - 185);
+                scrollAndEditorBox.setPrefHeight(newValue.doubleValue() - 185);
 
-                scrollPane.setPrefHeight(newValue.doubleValue() - 185);
                 //resultBox.setPrefHeight(newValue.doubleValue() * 0.1);
                 if (editButtonList != null) {
                     for (Button b : editButtonList) {
-                        b.setPrefHeight(scrollPane.getPrefHeight() * 0.1);
+                        //b.setPrefHeight(scrollPane.getPrefHeight() * 0.1);
+                        b.setPrefHeight(scrollAndEditorBox.getPrefHeight() * 0.1);
                     }
                 }
             }
@@ -200,15 +220,15 @@ public class Main extends Application {
 
         // container for all results
         allResultsBox = new VBox();
-        allResultsBox.setPrefWidth(window_width * 0.9 - 27);
+        allResultsBox.setPrefWidth(window_width * 0.9 - 32);
 
         // scrollbar for the results list
         scrollPane = new ScrollPane(allResultsBox);
         scrollPane.setPrefWidth(window_width * 0.9 - 10);
         scrollPane.setPrefHeight(window_height * 0.8 - 95);
-        //scrollPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
         scrollPane.setLayoutX(5);
         scrollPane.setLayoutY(window_height * 0.20);
+        scrollPane.setStyle("-fx-border-color: blue;");
 
         // main vertical container
         researchesVBox = new VBox();
@@ -364,10 +384,25 @@ public class Main extends Application {
         // container for the title, search bar & his button and the radio buttons
         researchesVBox.getChildren().addAll(t, searchBox, radioButtonBox);
 
+        // container for the embed editor
+        embedEditorBox = new VBox();
+        embedEditorBox.setStyle("-fx-border-color: red;");
+
+        // Hbox containing the scroll pane and the embed editor
+        scrollAndEditorBox = new HBox();
+        scrollAndEditorBox.setPrefWidth(window_width * 0.9 - 10);
+        scrollAndEditorBox.setPrefHeight(window_height * 0.8 - 95);
+        scrollAndEditorBox.setLayoutX(5);
+        scrollAndEditorBox.setLayoutY(window_height * 0.20);
+        scrollAndEditorBox.setStyle("-fx-border-color: black;");
+
+        scrollAndEditorBox.getChildren().addAll(scrollPane, embedEditorBox);
+
         // add the container(s) to the node list
         nodeList.add(menuBar);
         nodeList.add(researchesVBox);
-        nodeList.add(scrollPane);
+        //nodeList.add(scrollPane);
+        nodeList.add(scrollAndEditorBox);
 
         return nodeList;
     }
@@ -501,8 +536,10 @@ public class Main extends Application {
                     // we add the matching results in a list
                     matchingResultsList.add(resultRow);
 
-                    // then we add this container to the main list of all results
-                    //allResultsBox.getChildren().add(resultBox);
+//                    // we resize the button if there is no scroll bar, so there will be no space after the buttons
+//                    for (Button b : editButtonList) {
+//                        b.setMinWidth(scrollPane.getPrefWidth());
+//                    }
                 }
 
             }
@@ -708,10 +745,13 @@ public class Main extends Application {
 
         // the edit button
         Button editButton = new Button(title + "\n" + tags);
-        editButton.setPrefHeight(scrollPane.getPrefHeight() * 0.1);
-        editButton.setPrefWidth(scrollPane.getPrefWidth());
+        editButton.setPrefHeight(scrollAndEditorBox.getPrefHeight() * 0.1);
+        editButton.setPrefWidth(allResultsBox.getPrefWidth());
+//        editButton.setPrefHeight(scrollAndEditorBox.getPrefHeight() * 0.1);
+//        editButton.setPrefWidth(scrollAndEditorBox.getPrefWidth());
         editButton.setOnAction(event -> {
-            openEditor(resultRow);
+            //openEditor(resultRow);
+            openEmbedEditor(resultRow);
         });
 
         editButtonList.add(editButton);
@@ -931,6 +971,232 @@ public class Main extends Application {
             }
         });
         editStage.show();
+    }
+
+    private void openEmbedEditor(String[] resultRow) {
+        String id = resultRow[0];
+        String type = resultRow[1];
+        String title = resultRow[2];
+        String tags = resultRow[3];
+        String path = resultRow[4];
+
+        // checks if the editor container is empty, and clears it if not
+        if (!embedEditorBox.getChildren().isEmpty()) {
+            embedEditorBox.getChildren().clear();
+        }
+
+        // sets the size of the container
+        // also reduces the width of the scroll pane
+        isEmbedEditorOpened = true;
+        embedEditorBox.setPrefWidth(scrollAndEditorBox.getPrefWidth() * 0.7);
+        scrollPane.setPrefWidth(scrollAndEditorBox.getPrefWidth() * 0.3);
+        allResultsBox.setPrefWidth(scrollPane.getPrefWidth() - 22);
+        if (editButtonList != null) {
+            for (Button b : editButtonList) {
+                b.setPrefWidth(allResultsBox.getPrefWidth());
+                //b.setPrefWidth(scrollAndEditorBox.getPrefWidth() - 15);
+            }
+        }
+
+        boolean isMediaImage = true;
+        AtomicBoolean isVideoPlaying = new AtomicBoolean(false);
+
+        // need to make a new nodelist
+        if (editNodeList == null) {
+            editNodeList = new ArrayList<>();
+        } else {
+            editNodeList.clear();
+        }
+
+        // won't access if the window is opened again via the "edit" button
+        // or if an arrow is pressed
+        // or if the window is closed then reopened
+        if (editStage == null || !editStage.isShowing()) {
+
+            // containers
+            editVbox = new VBox();
+            editVbox.setAlignment(Pos.TOP_CENTER);
+            editVbox.setPrefWidth(1400);
+            editHbox = new HBox();
+            editHbox.setAlignment(Pos.CENTER);
+
+            // previous button
+            editPreviousButton = new Button("<----");
+            editPreviousButton.setStyle("-fx-font-size: 32");
+            editPreviousButton.setPrefHeight(40);
+            editPreviousButton.setPrefWidth(500);
+
+            // nex button
+            editNextButton = new Button("---->");
+            editNextButton.setStyle("-fx-font-size: 32");
+            editNextButton.setPrefHeight(40);
+            editNextButton.setPrefWidth(500);
+
+            editHbox.getChildren().addAll(editPreviousButton, editNextButton);
+
+            // name of the file in the view
+            contentTitle = new Text(title);
+
+            // text area containing the tags (can be edited)
+            tagsTextArea = new TextArea();
+            tagsTextArea.setPromptText("Entrez des mots-clefs");
+            tagsTextArea.setText(tags);
+            tagsTextArea.setPrefHeight(60);
+
+            // button to open the media with the system's reader
+            openWithSystemButton = new Button("Ouvrir avec le lecteur");
+            openWithSystemButton.setPrefHeight(40);
+            openWithSystemButton.setOnAction(event ->
+                    openContentWithDefaultSoftware(path)
+            );
+
+            // the stage
+            editStage = new Stage();
+            editStage.setResizable(false);
+            editStage.setTitle("Éditer du contenu");
+            editStage.initOwner(primaryStage);
+            editStage.initModality(Modality.WINDOW_MODAL);
+        }
+
+
+        editPreviousButton.setOnAction(event -> {
+            for (int i = 0; i < matchingResultsList.size(); i++) {
+                if (matchingResultsList.get(i) == resultRow) {
+                    if (i > 0) {
+                        if (isVideoPlaying.get()) {
+                            mediaPlayer.dispose();
+                            isVideoPlaying.set(false);
+                        }
+                        String tagText = tagsTextArea.getText().replace("\n", " ");
+                        //SimpleCRUD crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"));
+                        try {
+                            crud.updateTagsOfRecordById(id, tagText);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        // we modify the view
+                        matchingResultsList.get(i)[3] = tagText;
+                        openEditor(matchingResultsList.get(i - 1));
+                    }
+                }
+            }
+        });
+
+        editNextButton.setOnAction(event -> {
+            for (int i = 0; i < matchingResultsList.size(); i++) {
+                if (matchingResultsList.get(i) == resultRow) {
+                    if (i < matchingResultsList.size() - 1) {
+                        if (isVideoPlaying.get()) {
+                            mediaPlayer.dispose();
+                            isVideoPlaying.set(false);
+                        }
+                        String tagText = tagsTextArea.getText().replace("\n", " ");
+                        //SimpleCRUD crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"));
+                        try {
+                            crud.updateTagsOfRecordById(id, tagText);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        // we modify the view
+                        matchingResultsList.get(i)[3] = tagText;
+                        openEditor(matchingResultsList.get(i + 1));
+                    }
+                }
+            }
+        });
+
+
+        if (type != null && type.equals("image")) {
+            try {
+                Image image = new Image(new FileInputStream(path));
+                imageView = new ImageView(image);
+                imageView.setFitHeight(600);
+                imageView.setFitWidth(1400);
+                imageView.setPreserveRatio(true);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        } else if (type != null && type.equals("video")) {
+            isMediaImage = false;
+            Media media = new Media(new File(path).toURI().toString());
+            mediaPlayer = new MediaPlayer(media);
+            mediaView = new MediaView(mediaPlayer);
+            mediaView.setFitHeight(600);
+            mediaView.setFitWidth(1400);
+            mediaView.setPreserveRatio(true);
+            mediaView.setOnMouseClicked(event -> {
+                if (!isVideoPlaying.get()) {
+                    mediaPlayer.play();
+                    isVideoPlaying.set(true);
+                } else {
+                    mediaPlayer.pause();
+                    isVideoPlaying.set(false);
+                }
+            });
+        }
+
+        if (!editVbox.getChildren().isEmpty()) {
+            editVbox.getChildren().remove(0);
+            if (isMediaImage) {
+                editVbox.getChildren().add(0, imageView);
+            } else {
+                editVbox.getChildren().add(0, mediaView);
+            }
+            contentTitle.setText(title);
+            tagsTextArea.setText(tags);
+            openWithSystemButton.setOnAction(event ->
+                    openContentWithDefaultSoftware(path)
+            );
+        } else {
+            if (isMediaImage) {
+                editVbox.getChildren().add(imageView);
+            } else {
+                editVbox.getChildren().add(0, mediaView);
+            }
+            editVbox.getChildren().add(contentTitle);
+            editVbox.getChildren().add(editHbox);
+            editVbox.getChildren().add(tagsTextArea);
+            editVbox.getChildren().add(openWithSystemButton);
+        }
+
+        editNodeList.add(editVbox);
+
+        if (editGroup == null) {
+            editGroup = new Group();
+        } else {
+            editGroup.getChildren().clear();
+        }
+
+        editGroup.getChildren().addAll(editNodeList);
+
+        if (editScene == null) {
+            editScene = new Scene(editGroup, 1400, 800);
+        }
+        editStage.setScene(editScene);
+
+        // when the editor is closed, we stop the video if it is playing
+        // then, we save the tags entered by the user into the xml file
+        editStage.setOnCloseRequest(event -> {
+            if (isVideoPlaying.get()) {
+                mediaPlayer.dispose();
+                isVideoPlaying.set(false);
+            }
+            String tagText = tagsTextArea.getText().replace("\n", " ");
+            //SimpleCRUD crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"));
+            try {
+                crud.updateTagsOfRecordById(id, tagText);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            for (String[] strings : matchingResultsList) {
+                if (strings == resultRow) {
+                    // we modify the view
+                    strings[3] = tagText;
+                }
+            }
+        });
+        //editStage.show();
     }
 
     private void openContentWithDefaultSoftware(String uri) {

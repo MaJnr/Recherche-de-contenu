@@ -107,14 +107,17 @@ public class SimpleCRUD {
     }
 
     public void addRecord(int id, String type, String title, String tags, String path) throws IOException {
-        // prevent the user from entering a comma which would mess up the txt file
-        if (tags.contains(",")) {
+        /*if (tags.contains(",")) {
             System.out.println("\u001B[41m" + "Erreur : les mots clefs ne doivent pas contenir de virgule" + "\u001B[0m");
             return;
-        }
+        }*/
+
+        // prevent the user from entering a comma which would mess up the txt file
+        String remplacedTags = tags.replace(",", "\\\\");
+        String remplacedTitle = title.replace(",", "\\\\");
+        String remplacedPath = path.replace(",", "\\\\");
 
         BufferedWriter bw = new BufferedWriter(new FileWriter(db, true));
-        String tagsToWrite = tags;
 
         // if a backup file has been set, we copy the existing data to the new file
         // ex: old file (before) -> image1, customTag, path1...
@@ -127,12 +130,12 @@ public class SimpleCRUD {
             String[] record = searchRecordByPathName(path, backupFile);
             System.out.println(Arrays.toString(record));
             if (record != null && record.length != 0) {
-                tagsToWrite = record[3];
+                remplacedTags = record[3];
             }
 
         }
 
-        bw.write(id + "," + type + "," + title + "," + tagsToWrite + "," + path);
+        bw.write(id + "," + type + "," + remplacedTitle + "," + remplacedTags + "," + remplacedPath);
         bw.flush();
         bw.newLine();
         bw.close();
@@ -174,8 +177,12 @@ public class SimpleCRUD {
                 stTags = st.nextToken();
                 stPath = st.nextToken();
             }
+// we retransform the characters to commas, otherwise the path will not be the right one
+            String remplacedTitle = stTitle.replace("\\\\", ",");
+            String remplacedTags = stTags.replace("\\\\", ",");
+            String remplacedPath = stPath.replace("\\\\", ",");
 
-            recordArray = new String[]{stId, stType, stTitle, stTags, stPath};
+            recordArray = new String[]{stId, stType, remplacedTitle, remplacedTags, remplacedPath};
 
             // we filter the results according to their type
             if (fileTypeFlag == 0) {

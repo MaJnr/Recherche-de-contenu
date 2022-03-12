@@ -20,17 +20,22 @@ public class SimpleCRUD {
 
     // might want to enter the path of the txt file (the one stocked in prefs)
     public SimpleCRUD(String txtSaveFileName, boolean createDatabase) {
-        File saveFile = new File("generated/" + txtSaveFileName);
+        File saveFRAG = new File(txtSaveFileName);
+        System.out.println(saveFRAG.getName());
+        //File saveFile = new File("generated/" + txtSaveFileName);
+        File saveFile = new File("generated/" + saveFRAG.getName());
         if (!createDatabase) {
             db = saveFile;
             return;
         }
 
         // if the file exists, we don't want to append the same records, but only the new ones
+
         if (saveFile.exists()) {
             SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy_HH.mm.ss");
             Date d = new Date();
-            File otherFile = new File("generated/backup_" + formatter.format(d) + "_" + txtSaveFileName);
+//            File otherFile = new File("generated/backup_" + formatter.format(d) + "_" + txtSaveFileName);
+            File otherFile = new File("generated/backup_" + formatter.format(d) + "_" + saveFRAG.getName());
             try {
                 System.out.println("backup file created: " + otherFile.createNewFile());
                 copyFile(saveFile, otherFile);
@@ -72,10 +77,6 @@ public class SimpleCRUD {
         } catch (IOException e) {
             e.printStackTrace();
         }*/
-    }
-
-    public void createNewDb(String txtSaveFileName) {
-
     }
 
     private void copyFile(File fileToCopy, File fileToPaste) throws IOException {
@@ -239,11 +240,27 @@ public class SimpleCRUD {
         while ((record = br.readLine()) != null) {
             StringTokenizer st = new StringTokenizer(record, ",");
 
-            String stId = st.nextToken();
-            String stType = st.nextToken();
-            String stTitle = st.nextToken();
-            String stTags = st.nextToken();
-            String stPath = st.nextToken();
+            String stId = "";
+            String stType = "";
+            String stTitle = "";
+            String stTags = "";
+            String stPath = "";
+
+            // if the tags field is null or equals "", we do not modify it
+            // because the string tokenizer doesn't count it as a value
+            // so there would be 4 token instead of 5
+            if (st.countTokens() == 4) {
+                stId = st.nextToken();
+                stType = st.nextToken();
+                stTitle = st.nextToken();
+                stPath = st.nextToken();
+            } else {
+                stId = st.nextToken();
+                stType = st.nextToken();
+                stTitle = st.nextToken();
+                stTags = st.nextToken();
+                stPath = st.nextToken();
+            }
 
             if (stPath.equals(pathName)) {
                 recordArray = new String[]{stId, stType, stTitle, stTags, pathName};

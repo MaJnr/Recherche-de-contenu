@@ -94,6 +94,7 @@ public class Main extends Application {
     private Text contentTitle;
     private Button openWithSystemButton;
     private boolean isEmbedEditorOpened;
+    private Image image;
 
     // help window
     private List<Node> helpNodeList;
@@ -127,6 +128,11 @@ public class Main extends Application {
 
         nodeList = new ArrayList<>();
 
+        // the dimensions for the window
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        window_width = screenSize.width * 0.6;
+        window_height = screenSize.height * 0.75;
+
         group = new Group();
         group.getChildren().addAll(populateGroup());
         //group.setAutoSizeChildren(true);
@@ -136,9 +142,7 @@ public class Main extends Application {
 
         prefs = Preferences.userRoot().node(this.getClass().getName());
 
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        window_width = screenSize.width * 0.75;
-        window_height = screenSize.height * 0.75;
+
 
         Scene scene = new Scene(group, window_width, window_height);
 
@@ -148,31 +152,54 @@ public class Main extends Application {
             public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
                 //scrollPane.setPrefWidth(newValue.doubleValue() - 10);
                 scrollAndEditorBox.setPrefWidth(newValue.doubleValue() - 10);
+//                if (primaryStage.getHeight() < scrollAndEditorBox.getHeight() + researchesVBox.getHeight()) {
+//                    primaryStage.setMinHeight(scrollAndEditorBox.getHeight() + researchesVBox.getHeight());
+//                }
 
                 // if the embed editor is opened, we reduce the with of the scroll pane
                 if (isEmbedEditorOpened) {
                     embedEditorBox.setPrefWidth(newValue.doubleValue() * 0.7);
                     scrollPane.setPrefWidth(scrollAndEditorBox.getPrefWidth() * 0.3);
-                    System.out.println(scrollPane.getPrefWidth());
+                    //System.out.println(scrollPane.getPrefWidth());
                     allResultsBox.setPrefWidth(scrollPane.getPrefWidth() - 22);
                     if (editButtonList != null) {
                         for (Button b : editButtonList) {
                             b.setPrefWidth(allResultsBox.getPrefWidth());
                             //b.setPrefWidth(scrollAndEditorBox.getPrefWidth() - 15);
                         }
+                    }
+                    editNextButton.setPrefHeight(embedEditorBox.getPrefHeight() * 0.1);
+                    editNextButton.setPrefWidth(embedEditorBox.getPrefWidth() * 0.3);
+                    editPreviousButton.setPrefHeight(embedEditorBox.getPrefHeight() * 0.1);
+                    editPreviousButton.setPrefWidth(embedEditorBox.getPrefWidth() * 0.3);
+                    /*if (imageView != null) {
+                        System.out.println(embedEditorBox.getHeight() + "    " + embedEditorBox.getWidth());
+                        if ((image.getHeight() > (embedEditorBox.getHeight() * 0.7)) && (image.getWidth() / image.getHeight() < 1.5) || !(image.getWidth() / image.getHeight() > 3)) {
+                            imageView.setFitHeight(embedEditorBox.getHeight() * 0.8);
+                        } else  {
+                            imageView.setFitWidth(embedEditorBox.getWidth()); // 1400
+                        }
+                    }*/
+                    if (imageView != null) {
+                        imageView.setFitHeight(embedEditorBox.getHeight() * 0.7);
+                        imageView.setFitWidth(embedEditorBox.getPrefWidth());
+                    }
+                    if (mediaView != null) {
+                        mediaView.setFitWidth(embedEditorBox.getPrefWidth()); // 1400
+                        mediaView.setFitHeight(embedEditorBox.getPrefHeight() * 0.7);
                     }
                 } else {
                     scrollPane.setPrefWidth(scrollAndEditorBox.getPrefWidth());
                     allResultsBox.setPrefWidth(scrollPane.getPrefWidth() - 22);
                     if (editButtonList != null) {
                         for (Button b : editButtonList) {
+
                             b.setPrefWidth(allResultsBox.getPrefWidth());
                             //b.setPrefWidth(scrollAndEditorBox.getPrefWidth() - 15);
                         }
                     }
+
                 }
-
-
 
                 menuBar.setPrefWidth(newValue.doubleValue());
                 //searchBox.setPrefWidth(newValue.doubleValue() - 10);
@@ -191,8 +218,8 @@ public class Main extends Application {
         scene.heightProperty().addListener(new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-                //scrollPane.setPrefHeight(newValue.doubleValue() - 185);
-                scrollAndEditorBox.setPrefHeight(newValue.doubleValue() - 185);
+                //System.out.println(newValue.doubleValue());
+                scrollAndEditorBox.setPrefHeight(newValue.doubleValue() - 180);
 
                 //resultBox.setPrefHeight(newValue.doubleValue() * 0.1);
                 if (editButtonList != null) {
@@ -205,8 +232,10 @@ public class Main extends Application {
         });
 
         primaryStage.setTitle("Recherche de contenu");
-        primaryStage.setMinWidth(window_width * 0.4);
-        primaryStage.setMinHeight(window_height * 0.5);
+        primaryStage.setMinWidth(window_width * 0.45);
+        primaryStage.setMinHeight(window_height * 0.67); // 0.62
+        //primaryStage.minHeightProperty().bind(primaryStage.widthProperty().multiply(0.6));
+        //primaryStage.maxHeightProperty().bind(primaryStage.widthProperty().multiply(0.6));
         primaryStage.setScene(scene);
         scene.getRoot().requestFocus();
         this.primaryStage = primaryStage;
@@ -220,12 +249,13 @@ public class Main extends Application {
 
         // container for all results
         allResultsBox = new VBox();
-        allResultsBox.setPrefWidth(window_width * 0.9 - 32);
+        System.out.println(window_width);
+        allResultsBox.setPrefWidth(window_width - 32);
 
         // scrollbar for the results list
         scrollPane = new ScrollPane(allResultsBox);
-        scrollPane.setPrefWidth(window_width * 0.9 - 10);
-        scrollPane.setPrefHeight(window_height * 0.8 - 95);
+        scrollPane.setPrefWidth(window_width - 10);
+        scrollPane.setPrefHeight(window_height - 180);
         scrollPane.setLayoutX(5);
         scrollPane.setLayoutY(window_height * 0.20);
         scrollPane.setStyle("-fx-border-color: blue;");
@@ -233,7 +263,7 @@ public class Main extends Application {
         // main vertical container
         researchesVBox = new VBox();
         researchesVBox.setAlignment(Pos.TOP_CENTER);
-        researchesVBox.setPrefWidth(window_width * 0.9 - 10);
+        researchesVBox.setPrefWidth(window_width);
         researchesVBox.setPrefHeight(window_height * 0.2); // 200
         //researchesVBox.setFillWidth(true);
         researchesVBox.setLayoutY(50); //50
@@ -241,7 +271,7 @@ public class Main extends Application {
         // horizontal search container
         searchBox = new HBox();
         searchBox.setAlignment(Pos.CENTER);
-        searchBox.setPrefWidth(window_width * 0.9 - 10);
+        searchBox.setPrefWidth(window_width);
         searchBox.setPrefHeight(window_height * 0.1); // 100
         //searchBox.setMinWidth(window_width * 0.9); // 1500
 
@@ -253,7 +283,7 @@ public class Main extends Application {
 
         // text input
         researchTextField = new TextField();
-        researchTextField.setPromptText("Rechercher");
+        researchTextField.setPromptText("Rechercher par titre ou mot-clef");
         researchTextField.setPrefWidth(window_width * 0.5);
         researchTextField.setMaxWidth(window_width * 0.5);
         researchTextField.setOnKeyPressed(event -> {
@@ -311,7 +341,8 @@ public class Main extends Application {
             }
         });
 
-        MenuItem changeCurrentXmlFile = new MenuItem("Changer de fichier xml (sélectionner une autre base de données)");
+        //todo: the txt file is currently not loaded if we change the db file (has the previous one)
+        MenuItem changeCurrentXmlFile = new MenuItem("Changer de fichier de sauvegarde (sélectionner une autre base de données)");
         changeCurrentXmlFile.setOnAction(event -> {
             File saveFile = new File("generated");
 
@@ -335,6 +366,7 @@ public class Main extends Application {
                 allResultsBox.getChildren().clear();
 
                 System.out.println("new xml file source : " + prefs.get(PATH_TO_XML_FILE, "aucun"));
+               // didDbFileChanged = true;
             }
         });
 
@@ -357,6 +389,7 @@ public class Main extends Application {
         // search button
         Button okBtn = new Button("OK");
         okBtn.setOnAction(event -> {
+            System.out.println("txt path: " + prefs.get(PATH_TO_XML_FILE, "nopr"));
             startSearching();
         });
 
@@ -387,11 +420,12 @@ public class Main extends Application {
         // container for the embed editor
         embedEditorBox = new VBox();
         embedEditorBox.setStyle("-fx-border-color: red;");
+        embedEditorBox.setAlignment(Pos.BOTTOM_CENTER);
 
         // Hbox containing the scroll pane and the embed editor
         scrollAndEditorBox = new HBox();
-        scrollAndEditorBox.setPrefWidth(window_width * 0.9 - 10);
-        scrollAndEditorBox.setPrefHeight(window_height * 0.8 - 95);
+        scrollAndEditorBox.setPrefWidth(window_width - 10);
+        scrollAndEditorBox.setPrefHeight(window_height - 180);
         scrollAndEditorBox.setLayoutX(5);
         scrollAndEditorBox.setLayoutY(window_height * 0.20);
         scrollAndEditorBox.setStyle("-fx-border-color: black;");
@@ -438,7 +472,6 @@ public class Main extends Application {
     }
 
     private void startSearching() {
-        System.out.println(prefs.getBoolean(HAS_PATH_TO_DATA_DIR_BEEN_SET_PREF_KEY, false));
         if (!listOfResults.isEmpty()) {
             listOfResults.clear();
         }
@@ -493,10 +526,10 @@ public class Main extends Application {
         }
 
         try {
-            if (crud == null) {
-                System.out.println("null");
+           // if (crud == null) {
+
                 crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"), false);
-            }
+         //   }
 
             // we add a flag to filter the results
             int fileTypeFlag = -1;
@@ -509,6 +542,7 @@ public class Main extends Application {
             }
 
             List<String[]> allResultsList = crud.viewAllRecords(fileTypeFlag);
+            System.out.println(allResultsList.size());
 
             for (String[] resultRow : allResultsList) {
                 // items in resultRow :
@@ -701,12 +735,9 @@ public class Main extends Application {
         for (String imgExt : SUPPORTED_IMAGES_EXTENSIONS) {
             if (!wasFileAddedToList && splitStrings[splitStrings.length - 1].equalsIgnoreCase(imgExt)) {
                 // the tags must be manually added after
-                //todo: for the images the title might be useless (ex: DSC00275.JPG)
                 try {
-                    //todo: HERE IS THE TEST FOR THE TXT FILE
-                    // there must be a tag (not empty) so we give the type
                     //SimpleCRUD crud = new SimpleCRUD(prefs.get(PATH_TO_XML_FILE, "nope"));
-                    crud.addRecord(_idIncrNumber, "image", fileName, "image", absolutePathName);
+                    crud.addRecord(_idIncrNumber, "image", fileName, "", absolutePathName);
 
                     /*bw.write("<CONTENT>\n" +
                             "<TYPE>" + "IMAGE" + "</TYPE>\n" +
@@ -744,7 +775,7 @@ public class Main extends Application {
         );*/
 
         // the edit button
-        Button editButton = new Button(title + "\n" + tags);
+        Button editButton = new Button(title);
         editButton.setPrefHeight(scrollAndEditorBox.getPrefHeight() * 0.1);
         editButton.setPrefWidth(allResultsBox.getPrefWidth());
 //        editButton.setPrefHeight(scrollAndEditorBox.getPrefHeight() * 0.1);
@@ -988,49 +1019,33 @@ public class Main extends Application {
         // sets the size of the container
         // also reduces the width of the scroll pane
         isEmbedEditorOpened = true;
+        //scrollAndEditorBox.setPrefWidth(primaryStage.getWidth() - 25);
         embedEditorBox.setPrefWidth(scrollAndEditorBox.getPrefWidth() * 0.7);
         scrollPane.setPrefWidth(scrollAndEditorBox.getPrefWidth() * 0.3);
         allResultsBox.setPrefWidth(scrollPane.getPrefWidth() - 22);
         if (editButtonList != null) {
             for (Button b : editButtonList) {
                 b.setPrefWidth(allResultsBox.getPrefWidth());
-                //b.setPrefWidth(scrollAndEditorBox.getPrefWidth() - 15);
             }
         }
 
         boolean isMediaImage = true;
         AtomicBoolean isVideoPlaying = new AtomicBoolean(false);
 
-        // need to make a new nodelist
-        if (editNodeList == null) {
-            editNodeList = new ArrayList<>();
-        } else {
-            editNodeList.clear();
-        }
-
-        // won't access if the window is opened again via the "edit" button
-        // or if an arrow is pressed
-        // or if the window is closed then reopened
-        if (editStage == null || !editStage.isShowing()) {
-
-            // containers
-            editVbox = new VBox();
-            editVbox.setAlignment(Pos.TOP_CENTER);
-            editVbox.setPrefWidth(1400);
             editHbox = new HBox();
-            editHbox.setAlignment(Pos.CENTER);
+            editHbox.setAlignment(Pos.BOTTOM_CENTER);
 
             // previous button
-            editPreviousButton = new Button("<----");
-            editPreviousButton.setStyle("-fx-font-size: 32");
-            editPreviousButton.setPrefHeight(40);
-            editPreviousButton.setPrefWidth(500);
+            editPreviousButton = new Button("<---");
+            //editPreviousButton.setStyle("-fx-font-size: 32");
+            editPreviousButton.setPrefHeight(embedEditorBox.getPrefHeight() * 0.1); //40
+            editPreviousButton.setPrefWidth(embedEditorBox.getPrefWidth() * 0.3); // 500
 
-            // nex button
-            editNextButton = new Button("---->");
-            editNextButton.setStyle("-fx-font-size: 32");
-            editNextButton.setPrefHeight(40);
-            editNextButton.setPrefWidth(500);
+            // next button
+            editNextButton = new Button("--->");
+            //editNextButton.setStyle("-fx-font-size: 32");
+            editNextButton.setPrefHeight(embedEditorBox.getPrefHeight() * 0.1);
+            editNextButton.setPrefWidth(embedEditorBox.getPrefWidth() * 0.3);
 
             editHbox.getChildren().addAll(editPreviousButton, editNextButton);
 
@@ -1043,20 +1058,16 @@ public class Main extends Application {
             tagsTextArea.setText(tags);
             tagsTextArea.setPrefHeight(60);
 
+            if (!tagsTextArea.isFocused()) {
+            embedEditorBox.requestFocus();
+        }
+
             // button to open the media with the system's reader
             openWithSystemButton = new Button("Ouvrir avec le lecteur");
             openWithSystemButton.setPrefHeight(40);
             openWithSystemButton.setOnAction(event ->
                     openContentWithDefaultSoftware(path)
             );
-
-            // the stage
-            editStage = new Stage();
-            editStage.setResizable(false);
-            editStage.setTitle("Éditer du contenu");
-            editStage.initOwner(primaryStage);
-            editStage.initModality(Modality.WINDOW_MODAL);
-        }
 
 
         editPreviousButton.setOnAction(event -> {
@@ -1076,7 +1087,7 @@ public class Main extends Application {
                         }
                         // we modify the view
                         matchingResultsList.get(i)[3] = tagText;
-                        openEditor(matchingResultsList.get(i - 1));
+                        openEmbedEditor(matchingResultsList.get(i - 1));
                     }
                 }
             }
@@ -1099,7 +1110,7 @@ public class Main extends Application {
                         }
                         // we modify the view
                         matchingResultsList.get(i)[3] = tagText;
-                        openEditor(matchingResultsList.get(i + 1));
+                        openEmbedEditor(matchingResultsList.get(i + 1));
                     }
                 }
             }
@@ -1108,10 +1119,10 @@ public class Main extends Application {
 
         if (type != null && type.equals("image")) {
             try {
-                Image image = new Image(new FileInputStream(path));
+                image = new Image(new FileInputStream(path));
                 imageView = new ImageView(image);
-                imageView.setFitHeight(600);
-                imageView.setFitWidth(1400);
+                imageView.setFitWidth(embedEditorBox.getPrefWidth());
+                imageView.setFitHeight(embedEditorBox.getHeight() * 0.7);
                 imageView.setPreserveRatio(true);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
@@ -1121,8 +1132,9 @@ public class Main extends Application {
             Media media = new Media(new File(path).toURI().toString());
             mediaPlayer = new MediaPlayer(media);
             mediaView = new MediaView(mediaPlayer);
-            mediaView.setFitHeight(600);
-            mediaView.setFitWidth(1400);
+            //todo: if height is too high, fit height, else fit width
+            mediaView.setFitWidth(embedEditorBox.getPrefWidth()); // 1400
+            mediaView.setFitHeight(embedEditorBox.getPrefHeight() * 0.7);
             mediaView.setPreserveRatio(true);
             mediaView.setOnMouseClicked(event -> {
                 if (!isVideoPlaying.get()) {
@@ -1135,7 +1147,30 @@ public class Main extends Application {
             });
         }
 
-        if (!editVbox.getChildren().isEmpty()) {
+        if (!embedEditorBox.getChildren().isEmpty()) {
+            embedEditorBox.getChildren().remove(0);
+            if (isMediaImage) {
+                embedEditorBox.getChildren().add(0, imageView);
+            } else {
+                embedEditorBox.getChildren().add(0, mediaView);
+            }
+            contentTitle.setText(title);
+            tagsTextArea.setText(tags);
+            openWithSystemButton.setOnAction(event ->
+                    openContentWithDefaultSoftware(path)
+            );
+        } else {
+            if (isMediaImage) {
+                embedEditorBox.getChildren().add(imageView);
+            } else {
+                embedEditorBox.getChildren().add(0, mediaView);
+            }
+            embedEditorBox.getChildren().add(contentTitle);
+            embedEditorBox.getChildren().add(editHbox);
+            embedEditorBox.getChildren().add(tagsTextArea);
+            embedEditorBox.getChildren().add(openWithSystemButton);
+        }
+       /* if (!editVbox.getChildren().isEmpty()) {
             editVbox.getChildren().remove(0);
             if (isMediaImage) {
                 editVbox.getChildren().add(0, imageView);
@@ -1157,9 +1192,9 @@ public class Main extends Application {
             editVbox.getChildren().add(editHbox);
             editVbox.getChildren().add(tagsTextArea);
             editVbox.getChildren().add(openWithSystemButton);
-        }
+        }*/
 
-        editNodeList.add(editVbox);
+       /* editNodeList.add(editVbox);
 
         if (editGroup == null) {
             editGroup = new Group();
@@ -1172,9 +1207,9 @@ public class Main extends Application {
         if (editScene == null) {
             editScene = new Scene(editGroup, 1400, 800);
         }
-        editStage.setScene(editScene);
+        editStage.setScene(editScene);*/
 
-        // when the editor is closed, we stop the video if it is playing
+        /*// when the editor is closed, we stop the video if it is playing
         // then, we save the tags entered by the user into the xml file
         editStage.setOnCloseRequest(event -> {
             if (isVideoPlaying.get()) {
@@ -1196,7 +1231,7 @@ public class Main extends Application {
                 }
             }
         });
-        //editStage.show();
+        editStage.show();*/
     }
 
     private void openContentWithDefaultSoftware(String uri) {

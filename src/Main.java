@@ -446,7 +446,7 @@ public class Main extends Application {
         // research bar with its search button
         searchBox.getChildren().addAll(researchTextField, okBtn);
 
-        resultsCountText = new Text("sdfs");
+        resultsCountText = new Text();
         resultsCountText.setStyle("-fx-font-size: 18");
 
         // container for the title, search bar & his button and the radio buttons
@@ -596,6 +596,7 @@ public class Main extends Application {
 
             List<String[]> allResultsList = crud.viewAllRecords(fileTypeFlag);
 
+            //todo: the count is not reseted after a search
             resultsCountText.setText(allResultsList.size() + " résultats");
             System.out.println(allResultsList.size());
 
@@ -658,7 +659,30 @@ public class Main extends Application {
         if (wordsResearched.length == 0)
             return false;
 
+        boolean includedWord = false;
+
         for (String word : wordsResearched) {
+            // if a word has this pattern : w1+w2
+            // we make a search for content that has both w1 and w2
+            // we need to make another splitter
+            //todo: the "+" splitter also works with " ", maybe change that ?
+            String[] containsWords = word.split("\\+");
+            if (containsWords.length > 1) {
+                System.out.println(Arrays.toString(containsWords));
+                boolean matchingWord = true;
+
+            for (String wrd : containsWords) {
+                    if (!removeAccents(normalize(title.toLowerCase(Locale.ROOT))).contains(removeAccents(normalize(wrd.toLowerCase(Locale.ROOT))))) {
+                        if (!removeAccents(normalize(tags.toLowerCase(Locale.ROOT))).contains(removeAccents(normalize(wrd.toLowerCase(Locale.ROOT)))))
+                        matchingWord = false;
+                    }
+                }
+                if (matchingWord) {
+                    return true;
+                }
+            }
+
+
             // if the name OR the tags doesn't contains the searched words, we return false
             // is ok, but could be simplified...
             if (!removeAccents(normalize(title.toLowerCase(Locale.ROOT))).contains(removeAccents(normalize(word.toLowerCase(Locale.ROOT))))) {
@@ -1100,16 +1124,16 @@ public class Main extends Application {
         tagsTextArea.setText(tags);
         tagsTextArea.setPrefHeight(60);
 
-//        if (!tagsTextArea.isFocused()) {
-//            embedEditorBox.requestFocus();
-//        }
-
         // button to open the media with the system's reader
         openWithSystemButton = new Button("Ouvrir avec le lecteur");
         openWithSystemButton.setPrefHeight(40);
-        openWithSystemButton.setOnAction(event ->
-                openContentWithDefaultSoftware(path)
-        );
+        openWithSystemButton.setOnAction(event -> {
+            if (mediaPlayer != null && isVideoPlaying) {
+                mediaPlayer.pause();
+                isVideoPlaying = false;
+            }
+            openContentWithDefaultSoftware(path);
+        });
 
 
         editPreviousButton.setOnAction(event -> {

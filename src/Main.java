@@ -1,5 +1,8 @@
 import javafx.application.Application;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -499,64 +502,98 @@ public class Main extends Application {
             helpNodeList = new ArrayList<>();
         }
 
-        Text useTitle = new Text();
-        useTitle.setStyle("-fx-font-size: 24;-fx-font-weight: bold;");
-        useTitle.setTextAlignment(TextAlignment.CENTER);
-        useTitle.setText("Utilisation\n");
+        Text searchUseTitle = new Text("Utilisation : barre de recherche\n");
+        searchUseTitle.setStyle("-fx-font-size: 24;-fx-font-weight: bold;");
+        searchUseTitle.setTextAlignment(TextAlignment.CENTER);
 
-        Text useDesc1 = new Text("Dans la barre de recherche, entrez le texte contenu dans le titre du média recherché ");
-        useDesc1.setStyle("-fx-font-size: 16;");
+        Text searchUseDesc1 = new Text("Dans la barre de recherche, entrez le texte contenu dans le titre du média recherché ");
+        searchUseDesc1.setStyle("-fx-font-size: 16;");
 
-        Text useDesc2 = new Text("OU ");
-        useDesc2.setStyle("-fx-font-size: 16;-fx-font-weight: bold;");
+        Text searchUseDesc2 = new Text("OU ");
+        searchUseDesc2.setStyle("-fx-font-size: 16;-fx-font-weight: bold;");
 
-        Text useDesc3 = new Text("dans les mots-clefs (la description) préalablement reseignés. Si la barre de recherche ne contient rien, tous les résultats seront affichés." +
+        Text searchUseDesc3 = new Text("dans les mots-clefs (la description) préalablement reseignés. " +
+                "Si la barre de recherche ne contient rien, tous les résultats seront affichés." +
                 "\n\nLes résultats affichés sont ceux qui contiennent ");
-        useDesc3.setStyle("-fx-font-size: 16;");
+        searchUseDesc3.setStyle("-fx-font-size: 16;");
 
-        Text useDesc4 = new Text("TOUS ");
-        useDesc4.setStyle("-fx-font-size: 16;-fx-font-weight: bold;");
+        Text searchUseDesc4 = new Text("TOUS ");
+        searchUseDesc4.setStyle("-fx-font-size: 16;-fx-font-weight: bold;");
 
-        Text useDesc5 = new Text("les mots entrés.\nExemple : si on recherche '");
-        useDesc5.setStyle("-fx-font-size: 16");
+        Text searchUseDesc5 = new Text("les mots entrés.\nExemple : si on recherche '");
+        searchUseDesc5.setStyle("-fx-font-size: 16");
 
-        Text useDesc6 = new Text("anniversaire mariage");
-        useDesc6.setStyle("-fx-font-size: 16;-fx-font-style: italic;");
+        Text searchUseDesc6 = new Text("anniversaire mariage");
+        searchUseDesc6.setStyle("-fx-font-size: 16;-fx-font-style: italic;");
 
-        Text useDesc7 = new Text("', le résultat '");
-        useDesc7.setStyle("-fx-font-size: 16");
+        Text searchUseDesc7 = new Text("', le résultat '");
+        searchUseDesc7.setStyle("-fx-font-size: 16");
 
-        Text useDesc8 = new Text("anniversaire de mariage d'Elisabeth et Patrice");
-        useDesc8.setStyle("-fx-font-size: 16;-fx-font-style: italic;");
+        Text searchUseDesc8 = new Text("anniversaire de mariage d'Elisabeth et Patrice");
+        searchUseDesc8.setStyle("-fx-font-size: 16;-fx-font-style: italic;");
 
-        Text useDesc9 = new Text("' apparaîtra comme résultat, mais pas '");
-        useDesc9.setStyle("-fx-font-size: 16");
+        Text searchUseDesc9 = new Text("' apparaîtra comme résultat, mais pas '");
+        searchUseDesc9.setStyle("-fx-font-size: 16");
 
-        Text useDesc10 = new Text("anniversaire de Hubert");
-        useDesc10.setStyle("-fx-font-size: 16;-fx-font-style: italic;");
+        Text searchUseDesc10 = new Text("anniversaire de Hubert");
+        searchUseDesc10.setStyle("-fx-font-size: 16;-fx-font-style: italic;");
 
-        Text useDesc11 = new Text("' ou bien '");
-        useDesc11.setStyle("-fx-font-size: 16");
+        Text searchUseDesc11 = new Text("' ou bien '");
+        searchUseDesc11.setStyle("-fx-font-size: 16");
 
-        Text useDesc12 = new Text("mariage de Cathel et Laurent");
-        useDesc12.setStyle("-fx-font-size: 16;-fx-font-style: italic;");
+        Text searchUseDesc12 = new Text("mariage de Cathel et Laurent");
+        searchUseDesc12.setStyle("-fx-font-size: 16;-fx-font-style: italic;");
 
-        Text useDesc13 = new Text("'.\n\nLes résultats peuvent être filtrés par type : tous (aucun filtrage), vidéos uniquement ou photos uniquement.\n\n" +
-                "");
-        useDesc13.setStyle("-fx-font-size: 16");
+        Text searchUseDesc13 = new Text("'.\n\nLes résultats peuvent être filtrés par type : tous (aucun filtrage), vidéos uniquement ou photos uniquement.\n\n");
+        searchUseDesc13.setStyle("-fx-font-size: 16");
 
-        TextFlow textFlow = new TextFlow();
-        textFlow.setTextAlignment(TextAlignment.JUSTIFY);
-        textFlow.getChildren().addAll(useDesc1, useDesc2, useDesc3, useDesc4, useDesc5, useDesc6, useDesc7, useDesc8, useDesc9, useDesc10, useDesc11, useDesc12, useDesc13);
+        TextFlow searchUseTextFlow = new TextFlow();
+        searchUseTextFlow.setTextAlignment(TextAlignment.JUSTIFY);
+        searchUseTextFlow.getChildren().addAll(searchUseDesc1, searchUseDesc2, searchUseDesc3, searchUseDesc4, searchUseDesc5,
+                searchUseDesc6, searchUseDesc7, searchUseDesc8, searchUseDesc9, searchUseDesc10, searchUseDesc11, searchUseDesc12, searchUseDesc13);
+
+        Text editorUseTitle = new Text("Utilisation : éditeur\n");
+        editorUseTitle.setStyle("-fx-font-size: 24;-fx-font-weight: bold;");
+        editorUseTitle.setTextAlignment(TextAlignment.CENTER);
+
+        Text editorUseDesc = new Text("Une fois avoir cliqué sur un résultat, l'éditeur de contenu s'ouvre. Il est composé de plusieurs éléments :\n\n" +
+                "- le lecteur, qui affiche les photos et les vidéos. Si le contenu est une vidéo, elle peux être lancée ou mise en pause en cliquant sur la zone de lecture. " +
+                "Il est possible d'avancer ou de reculer de 10 secondes dans la vidéo en utilisant les flèches droite et gauche, et de mettre en pause/reprendre la vidéo " +
+                "en appuyant sur espace\n\n" +
+                "- le titre du média\n\n" +
+                "- les flèches suivant et précedent pour passer au résultat suivant ou précédent dans la liste des résultats\n\n" +
+                "- le champ de texte dans lequel des mots-clefs peuvent être écrits, et qui pourront être recherchés par la suite pour trouver le média correspondant\n\n" +
+                "- le bouton 'ouvrir avec le lecteur' pour lancer le lecteur par défaut de l'ordinateur, utile pour afficher l'image ou la vidéo en plein écran\n\n");
+        editorUseDesc.setStyle("-fx-font-size: 16");
+
+        TextFlow editorUseTextFlow = new TextFlow();
+        editorUseTextFlow.setTextAlignment(TextAlignment.JUSTIFY);
+        editorUseTextFlow.getChildren().addAll(editorUseDesc);
 
         helpVbox = new VBox();
         helpVbox.setAlignment(Pos.CENTER);
         helpVbox.setPrefWidth(window_width * 0.8 - 20);
         helpVbox.setLayoutX(10);
-        helpVbox.getChildren().addAll(useTitle, textFlow);
+        helpVbox.getChildren().addAll(searchUseTitle, searchUseTextFlow, editorUseTitle, editorUseTextFlow);
+
+        ScrollBar sb = new ScrollBar();
+        sb.setLayoutX(window_width * 0.8 - 7);
+        sb.setPrefHeight(window_height * 0.8 + 10);
+        sb.setVisibleAmount(30);
+
         helpNodeList.add(helpVbox);
+        helpNodeList.add(sb);
 
         Group helpGroup = new Group();
+
+
+        sb.setOrientation(Orientation.VERTICAL);
+        sb.valueProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+                helpVbox.setLayoutY(-newValue.doubleValue());
+            }
+        });
         helpGroup.getChildren().addAll(helpNodeList);
 
         Scene helpScene = new Scene(helpGroup, window_width * 0.8, window_height * 0.8);

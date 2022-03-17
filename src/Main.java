@@ -1,5 +1,4 @@
 import javafx.application.Application;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
@@ -16,13 +15,13 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
+import javafx.scene.text.TextFlow;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
@@ -31,7 +30,6 @@ import javafx.util.Duration;
 import javafx.util.Pair;
 
 import java.awt.*;
-import java.awt.event.KeyListener;
 import java.io.*;
 import java.text.Normalizer;
 import java.util.*;
@@ -119,8 +117,8 @@ public class Main extends Application {
     // the custom list of supported extensions
     // if a file doesn't have its extension in the lists, it will not be added in the xml file
     // case doesn't matter
-    final String[] SUPPORTED_VIDEO_EXTENSIONS = {"mp4", "mpg", "mov", "wmv"};
-    final String[] SUPPORTED_IMAGES_EXTENSIONS = {"jpg", "png", "jpeg", "gif"};
+    final String[] SUPPORTED_VIDEO_EXTENSIONS = {"mp4", "mpg", "wmv", "fxm", "flv"};
+    final String[] SUPPORTED_IMAGES_EXTENSIONS = {"jpg", "png", "gif", "mpo"};
 
     // the class who manages all io operations on the txt files
     private SimpleCRUD crud;
@@ -224,25 +222,23 @@ public class Main extends Application {
 
         // forward/backward feature
         scene.setOnKeyReleased(event -> {
-            //todo: if we right, then left, it will add 10s, then add 10s
-            // same for the other way: l, r, r -> -10, -10, +10
-            // one input late
-            if (mediaPlayer != null && !mediaPlayer.getStatus().equals(MediaPlayer.Status.DISPOSED)) {
+            if (mediaPlayer != null && !mediaPlayer.getStatus().equals(MediaPlayer.Status.DISPOSED) && mediaView != null && mediaView.isFocused()) {
+               // mediaView.requestFocus();
             if (event.getCode() == KeyCode.RIGHT) {
-                    System.out.println("forward : media time: " + (int) mediaPlayer.getCurrentTime().toSeconds() + "/" + (int) mediaPlayer.getTotalDuration().toSeconds());
                     mediaPlayer.seek(mediaPlayer.getCurrentTime().add(Duration.seconds(10)));
-                }
+                System.out.println("forward : media time: " + (int) mediaPlayer.getCurrentTime().toSeconds() + "/" + (int) mediaPlayer.getTotalDuration().toSeconds());
+            }
                 if (event.getCode() == KeyCode.LEFT) {
-                    System.out.println("backward : media time: " + (int) mediaPlayer.getCurrentTime().toSeconds() + "/" + (int) mediaPlayer.getTotalDuration().toSeconds());
-
-
                     mediaPlayer.seek(mediaPlayer.getCurrentTime().subtract(Duration.seconds(10)));
+                    System.out.println("backward : media time: " + (int) mediaPlayer.getCurrentTime().toSeconds() + "/" + (int) mediaPlayer.getTotalDuration().toSeconds());
                 }
                 if (event.getCode() == KeyCode.SPACE) {
                     if (isVideoPlaying) {
+                        System.out.println("paused");
                         mediaPlayer.pause();
                         isVideoPlaying = false;
                     } else {
+                        System.out.println("resumed");
                         mediaPlayer.play();
                         isVideoPlaying = true;
                     }
@@ -387,7 +383,7 @@ public class Main extends Application {
 
         // refresh txt if an item was added
         // we create a copy of the existing txt file then we append the new data
-        MenuItem helpItem = new MenuItem("Aide");
+        MenuItem helpItem = new MenuItem("Aide et préférences");
         helpItem.setOnAction(event -> {
             openHelpWindow();
         });
@@ -412,7 +408,7 @@ public class Main extends Application {
         ToggleGroup radioToggleGroup = new ToggleGroup();
         filterAll = new RadioButton("Tous");
         filterVideos = new RadioButton("Vidéos");
-        filterImages = new RadioButton("Images");
+        filterImages = new RadioButton("Photos");
         filterAll.setToggleGroup(radioToggleGroup);
         filterAll.setSelected(true);
         filterAll.setPadding(new Insets(0, 20, 0, 0));
@@ -503,22 +499,72 @@ public class Main extends Application {
             helpNodeList = new ArrayList<>();
         }
 
-        Text helpText = new Text();
-        helpText.setText("Help text here");
+        Text useTitle = new Text();
+        useTitle.setStyle("-fx-font-size: 24;-fx-font-weight: bold;");
+        useTitle.setTextAlignment(TextAlignment.CENTER);
+        useTitle.setText("Utilisation\n");
+
+        Text useDesc1 = new Text("Dans la barre de recherche, entrez le texte contenu dans le titre du média recherché ");
+        useDesc1.setStyle("-fx-font-size: 16;");
+
+        Text useDesc2 = new Text("OU ");
+        useDesc2.setStyle("-fx-font-size: 16;-fx-font-weight: bold;");
+
+        Text useDesc3 = new Text("dans les mots-clefs (la description) préalablement reseignés. Si la barre de recherche ne contient rien, tous les résultats seront affichés." +
+                "\n\nLes résultats affichés sont ceux qui contiennent ");
+        useDesc3.setStyle("-fx-font-size: 16;");
+
+        Text useDesc4 = new Text("TOUS ");
+        useDesc4.setStyle("-fx-font-size: 16;-fx-font-weight: bold;");
+
+        Text useDesc5 = new Text("les mots entrés.\nExemple : si on recherche '");
+        useDesc5.setStyle("-fx-font-size: 16");
+
+        Text useDesc6 = new Text("anniversaire mariage");
+        useDesc6.setStyle("-fx-font-size: 16;-fx-font-style: italic;");
+
+        Text useDesc7 = new Text("', le résultat '");
+        useDesc7.setStyle("-fx-font-size: 16");
+
+        Text useDesc8 = new Text("anniversaire de mariage d'Elisabeth et Patrice");
+        useDesc8.setStyle("-fx-font-size: 16;-fx-font-style: italic;");
+
+        Text useDesc9 = new Text("' apparaîtra comme résultat, mais pas '");
+        useDesc9.setStyle("-fx-font-size: 16");
+
+        Text useDesc10 = new Text("anniversaire de Hubert");
+        useDesc10.setStyle("-fx-font-size: 16;-fx-font-style: italic;");
+
+        Text useDesc11 = new Text("' ou bien '");
+        useDesc11.setStyle("-fx-font-size: 16");
+
+        Text useDesc12 = new Text("mariage de Cathel et Laurent");
+        useDesc12.setStyle("-fx-font-size: 16;-fx-font-style: italic;");
+
+        Text useDesc13 = new Text("'.\n\nLes résultats peuvent être filtrés par type : tous (aucun filtrage), vidéos uniquement ou photos uniquement.\n\n" +
+                "");
+        useDesc13.setStyle("-fx-font-size: 16");
+
+        TextFlow textFlow = new TextFlow();
+        textFlow.setTextAlignment(TextAlignment.JUSTIFY);
+        textFlow.getChildren().addAll(useDesc1, useDesc2, useDesc3, useDesc4, useDesc5, useDesc6, useDesc7, useDesc8, useDesc9, useDesc10, useDesc11, useDesc12, useDesc13);
 
         helpVbox = new VBox();
-        helpVbox.getChildren().add(helpText);
+        helpVbox.setAlignment(Pos.CENTER);
+        helpVbox.setPrefWidth(window_width * 0.8 - 20);
+        helpVbox.setLayoutX(10);
+        helpVbox.getChildren().addAll(useTitle, textFlow);
         helpNodeList.add(helpVbox);
 
         Group helpGroup = new Group();
         helpGroup.getChildren().addAll(helpNodeList);
 
-        Scene helpScene = new Scene(helpGroup, 800, 800);
+        Scene helpScene = new Scene(helpGroup, window_width * 0.8, window_height * 0.8);
 
         Stage helpStage = new Stage();
         helpStage.setScene(helpScene);
         helpStage.setResizable(false);
-        helpStage.setTitle("Aide et informations");
+        helpStage.setTitle("Aide et préférences");
         helpStage.initOwner(primaryStage);
         helpStage.initModality(Modality.WINDOW_MODAL);
         helpStage.show();
@@ -594,11 +640,9 @@ public class Main extends Application {
                 fileTypeFlag = 2;
             }
 
-            List<String[]> allResultsList = crud.viewAllRecords(fileTypeFlag);
 
-            //todo: the count is not reseted after a search
-            resultsCountText.setText(allResultsList.size() + " résultats");
-            System.out.println(allResultsList.size());
+            List<String[]> allResultsList = crud.viewAllRecords(fileTypeFlag);
+            int countResults = 0;
 
             for (String[] resultRow : allResultsList) {
                 // items in resultRow :
@@ -626,13 +670,11 @@ public class Main extends Application {
                     // we add the matching results in a list
                     matchingResultsList.add(resultRow);
 
-//                    // we resize the button if there is no scroll bar, so there will be no space after the buttons
-//                    for (Button b : editButtonList) {
-//                        b.setMinWidth(scrollPane.getPrefWidth());
-//                    }
+                    countResults++;
                 }
 
             }
+            resultsCountText.setText(countResults + " résultats");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -651,13 +693,15 @@ public class Main extends Application {
         String path = resultRow[4];
 
         // if there is no research words, we display all results
-        if (researchTextField.getText() == null || researchTextField.getText().equalsIgnoreCase("")) {
+        if (researchTextField.getText() == null || researchTextField.getText().equalsIgnoreCase("") || containsOnlySpaces(researchTextField.getText())) {
             return true;
         }
 
         String[] wordsResearched = researchTextField.getText().split(" ");
-        if (wordsResearched.length == 0)
+        if (wordsResearched.length == 0) {
+            System.out.println("search nothing");
             return false;
+        }
 
         boolean includedWord = false;
 
@@ -694,6 +738,18 @@ public class Main extends Application {
         return true;
     }
 
+    // checks if a string contains only spaces
+    private boolean containsOnlySpaces(String researchTextField) {
+        char[] chars = researchTextField.toCharArray();
+        // we loop through the chars
+        for (char c : chars) {
+            if (c != ' ') {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // replaces accents on strings and puts them after the concerned character
     // ex: à -> a`, ô -> o^
     String normalize(String input) {
@@ -716,7 +772,7 @@ public class Main extends Application {
 
         // we generate a txt name based on the src folder
         // ex: screenshots.txt
-        String absolutePathOfXMLFile = new File(mainPath).getName() + ".txt";
+        String absolutePathOfXMLFile = new File(mainPath).getAbsolutePath() + ".txt";
 
         /*if (new File(absolutePathOfXMLFile).exists()) {
             testXmlFile = new File("generated/tmp_" + new File(mainPath).getName() + ".txt");

@@ -546,7 +546,10 @@ public class Main extends Application {
         Text searchUseDesc12 = new Text("mariage de Cathel et Laurent");
         searchUseDesc12.setStyle("-fx-font-size: 16;-fx-font-style: italic;");
 
-        Text searchUseDesc13 = new Text("'.\n\nLes résultats peuvent être filtrés par type : tous (aucun filtrage), vidéos uniquement ou photos uniquement.\n\n");
+        Text searchUseDesc13 = new Text("'. Les mots-clefs n'ont pas besoin de contenir de lettre majuscules ni d'accents, par exemple, " +
+                "le résultat de la recherche 'helene' peux afficher les résultats contenant 'Hélène'.\n" +
+                "Si les mots 'aucun tag' sont entrés dans la barre de recherche, les résultats affichés seront ceux n'ayant aucun mot-clef.\n\n" +
+                "Les résultats peuvent être filtrés par type : tous (aucun filtrage), vidéos uniquement ou photos uniquement.\n\n");
         searchUseDesc13.setStyle("-fx-font-size: 16");
 
         TextFlow searchUseTextFlow = new TextFlow();
@@ -567,7 +570,7 @@ public class Main extends Application {
                 "- le champ de texte dans lequel des mots-clefs peuvent être écrits, et qui pourront être recherchés par la suite pour trouver le média correspondant\n\n" +
                 "- le bouton 'ouvrir avec le lecteur' pour lancer le lecteur par défaut de l'ordinateur, utile pour afficher l'image ou la vidéo en plein écran\n\n" +
                 "Lors de la saisie des mots-clefs, il est conseillé d'entrer le maximum d'informations pouvant identifier le média.\n" +
-                "Le lieu, les personnes présentes, le sujet ou évènement de la photo/vidéo sont les informations les plus importantes.");
+                "Le lieu, les personnes présentes, le sujet ou évènement de la photo/vidéo sont les informations les plus importantes.\n");
         editorUseDesc.setStyle("-fx-font-size: 16");
 
         TextFlow editorUseTextFlow = new TextFlow();
@@ -603,7 +606,7 @@ public class Main extends Application {
         sb.valueProperty().addListener(new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-                helpVbox.setLayoutY(-newValue.doubleValue());
+                helpVbox.setLayoutY(-newValue.doubleValue() * 1.5);
             }
         });
         helpGroup.getChildren().addAll(helpNodeList);
@@ -744,6 +747,11 @@ public class Main extends Application {
         // if there is no research words, we display all results
         if (researchTextField.getText() == null || researchTextField.getText().equalsIgnoreCase("") || containsOnlySpaces(researchTextField.getText())) {
             return true;
+        }
+
+        // if the user enters "aucun tag", the results will only be the contents that have no tags
+        if (researchTextField.getText().equalsIgnoreCase("aucun tag")) {
+            return removeAccents(normalize(tags).toLowerCase(Locale.ROOT)).equalsIgnoreCase("");
         }
 
         String[] wordsResearched = researchTextField.getText().split(" ");

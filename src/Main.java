@@ -1,6 +1,7 @@
 import javafx.application.Application;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
@@ -18,6 +19,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.*;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
@@ -563,7 +565,9 @@ public class Main extends Application {
                 "- le titre du média\n\n" +
                 "- les flèches suivant et précedent pour passer au résultat suivant ou précédent dans la liste des résultats\n\n" +
                 "- le champ de texte dans lequel des mots-clefs peuvent être écrits, et qui pourront être recherchés par la suite pour trouver le média correspondant\n\n" +
-                "- le bouton 'ouvrir avec le lecteur' pour lancer le lecteur par défaut de l'ordinateur, utile pour afficher l'image ou la vidéo en plein écran\n\n");
+                "- le bouton 'ouvrir avec le lecteur' pour lancer le lecteur par défaut de l'ordinateur, utile pour afficher l'image ou la vidéo en plein écran\n\n" +
+                "Lors de la saisie des mots-clefs, il est conseillé d'entrer le maximum d'informations pouvant identifier le média.\n" +
+                "Le lieu, les personnes présentes, le sujet ou évènement de la photo/vidéo sont les informations les plus importantes.");
         editorUseDesc.setStyle("-fx-font-size: 16");
 
         TextFlow editorUseTextFlow = new TextFlow();
@@ -572,20 +576,28 @@ public class Main extends Application {
 
         helpVbox = new VBox();
         helpVbox.setAlignment(Pos.CENTER);
-        helpVbox.setPrefWidth(window_width * 0.8 - 20);
+        helpVbox.setPrefWidth(window_width * 0.8 - 30);
         helpVbox.setLayoutX(10);
         helpVbox.getChildren().addAll(searchUseTitle, searchUseTextFlow, editorUseTitle, editorUseTextFlow);
 
         ScrollBar sb = new ScrollBar();
-        sb.setLayoutX(window_width * 0.8 - 7);
-        sb.setPrefHeight(window_height * 0.8 + 10);
+        sb.setLayoutX(window_width * 0.8 - 15);
+        sb.setPrefHeight(window_height * 0.8);
         sb.setVisibleAmount(30);
 
         helpNodeList.add(helpVbox);
         helpNodeList.add(sb);
 
         Group helpGroup = new Group();
-
+       /* helpGroup.setOnScroll(new EventHandler<ScrollEvent>() {
+            @Override
+            public void handle(ScrollEvent event) {
+                System.out.println(helpVbox.getLayoutY());
+                if (helpVbox.getLayoutY() >= 0) {
+                    helpVbox.setTranslateY(helpVbox.getTranslateY() + event.getDeltaY());
+                }
+            }
+        });*/
 
         sb.setOrientation(Orientation.VERTICAL);
         sb.valueProperty().addListener(new ChangeListener<Number>() {
